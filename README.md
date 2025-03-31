@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Carometro Alunos
 
-## Getting Started
+Sistema de gerenciamento de fotos e informações de alunos por curso, desenvolvido com tecnologias modernas para facilitar a organização de turmas.
 
-First, run the development server:
+## 🚀 Tecnologias
+
+- Next.js 13 (App Router)
+- TypeScript
+- Tailwind CSS
+- Cloudinary (armazenamento de imagens)
+- MongoDB (banco de dados)
+
+## 💡 Funcionalidades
+
+- **Área da Secretaria**
+
+  - Criação e gerenciamento de grupos por curso
+  - Adição de alunos via RA
+  - Upload de fotos
+  - Organização por períodos
+
+- **Visualização de Carometros**
+  - Visualização por curso
+  - Filtro por períodos
+  - Busca por nome ou RA
+  - Interface responsiva
+
+## 🎨 Layout
+
+- Design moderno com Tailwind CSS
+- Temas específicos por curso
+- Animações suaves
+- Interface adaptativa (mobile e desktop)
+
+## 📦 Instalação
 
 ```bash
+# Clonar o repositório
+git clone [https://github.com/Brunoxd23/carometroaluno.git]
+
+# Entrar na pasta do projeto
+cd carometro-alunos
+
+# Instalar dependências
+npm install
+
+# Configurar variáveis de ambiente
+# Criar arquivo .env.local com as seguintes variáveis:
+MONGODB_URI=
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=
+
+# Iniciar o servidor de desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🌟 Recursos Implementados
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- [x] Sistema de navegação entre cursos
+- [x] Gerenciamento de grupos por período
+- [x] Upload e visualização de fotos
+- [x] Busca e filtro de alunos
+- [x] Layout responsivo
+- [x] Temas por curso
+- [x] Animações e transições
+- [x] Integração com Cloudinary
+- [x] Persistência local dos dados
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Estrutura do Projeto
 
-## Learn More
+```
+carometro-alunos/
+├── src/
+│   ├── app/
+│   │   ├── carometros/
+│   │   ├── secretaria/
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── GroupManager.tsx
+│   │   ├── PhotoModal.tsx
+│   │   └── Toast.tsx
+│   └── types/
+├── public/
+│   └── background.svg
+└── package.json
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🤝 Como Contribuir
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📝 Licença
 
-## Deploy on Vercel
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Desenvolvido por Bruno com ❤️
