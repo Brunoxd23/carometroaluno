@@ -79,6 +79,8 @@ export default function GroupManager({
     studentName: string;
   } | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedCourse] = useState<string>(curso);
+  const [selectedPeriod] = useState<string | null>(null);
 
   const searchStudent = async (ra: string) => {
     setIsSearching(true);
@@ -107,7 +109,7 @@ export default function GroupManager({
       name: `Grupo ${groups.length + 1}`,
       students: [],
     };
-    onUpdateGroups([...groups, newGroup]);
+    handleUpdateGroups([...groups, newGroup]);
   };
 
   const confirmDeleteGroup = (groupId: string, name: string) => {
@@ -139,7 +141,7 @@ export default function GroupManager({
       return group;
     });
 
-    onUpdateGroups(updatedGroups);
+    handleUpdateGroups(updatedGroups);
     setGroupInputs((prev) => ({ ...prev, [groupId]: "" }));
     setSuccessMessage(`${student.name} adicionado(a) com sucesso!`);
   };
@@ -167,7 +169,7 @@ export default function GroupManager({
     if (!deleteConfirmation) return;
 
     if (deleteConfirmation.type === "group") {
-      onUpdateGroups(groups.filter((g) => g.id !== deleteConfirmation.id));
+      handleUpdateGroups(groups.filter((g) => g.id !== deleteConfirmation.id));
       setSuccessMessage(
         `Grupo "${deleteConfirmation.name}" excluído com sucesso`
       );
@@ -183,7 +185,7 @@ export default function GroupManager({
         }
         return group;
       });
-      onUpdateGroups(updatedGroups);
+      handleUpdateGroups(updatedGroups);
       setSuccessMessage(
         `${deleteConfirmation.name} foi removido(a) com sucesso`
       );
@@ -232,7 +234,7 @@ export default function GroupManager({
           return group;
         });
 
-        onUpdateGroups(updatedGroups);
+        handleUpdateGroups(updatedGroups);
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         setIsUploadingPhoto(null);
@@ -254,6 +256,34 @@ export default function GroupManager({
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     setSelectedGroup(groupId);
+  };
+
+  const handleUpdateGroups = async (newGroups: Group[]) => {
+    if (!selectedCourse || !selectedPeriod) {
+      onUpdateGroups(newGroups);
+      return;
+    }
+
+    const newCourseGroup = {
+      course: selectedCourse,
+      period: selectedPeriod,
+      groups: newGroups,
+    };
+
+    try {
+      await fetch("/api/groups", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newCourseGroup),
+      });
+
+      onUpdateGroups(newGroups);
+    } catch (error) {
+      console.error("Erro ao salvar grupos:", error);
+      setError("Erro ao salvar grupos. Tente novamente.");
+    }
   };
 
   return (

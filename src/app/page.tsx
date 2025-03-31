@@ -9,7 +9,7 @@ import {
 export default function Home() {
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 w-full max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 w-full max-w-4xl mt-20 md:mt-0">
         <Link
           href="/secretaria"
           className="flex flex-col items-center p-8 sm:p-12 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"

@@ -69,47 +69,40 @@ export default function CarometrosPage() {
     Odontologia: { groups: 0, students: 0, activePeriods: 0 },
   });
 
-  const countStats = useCallback(() => {
-    const stats: Record<
-      Course,
-      {
-        groups: number;
-        students: number;
-        activePeriods: number;
-      }
-    > = {
-      Engenharia: { groups: 0, students: 0, activePeriods: 0 },
-      Fisioterapia: { groups: 0, students: 0, activePeriods: 0 },
-      Nutrição: { groups: 0, students: 0, activePeriods: 0 },
-      Odontologia: { groups: 0, students: 0, activePeriods: 0 },
-    };
+  const fetchGroups = useCallback(async () => {
+    try {
+      const response = await fetch("/api/groups");
+      const data = await response.json();
 
-    Object.keys(courseConfig).forEach((course) => {
-      const courseData = JSON.parse(
-        localStorage.getItem("carometro-groups") || "[]"
-      ) as CourseGroup[];
-      const courseGroups = courseData.filter((g) => g.course === course);
+      const stats = {
+        Engenharia: { groups: 0, students: 0, activePeriods: 0 },
+        Fisioterapia: { groups: 0, students: 0, activePeriods: 0 },
+        Nutrição: { groups: 0, students: 0, activePeriods: 0 },
+        Odontologia: { groups: 0, students: 0, activePeriods: 0 },
+      };
 
-      courseGroups.forEach((group) => {
+      data.forEach((group: CourseGroup) => {
         if (group.groups && group.groups.length > 0) {
-          stats[course as Course].groups += group.groups.length;
-          stats[course as Course].students += group.groups.reduce(
+          stats[group.course as Course].groups += group.groups.length;
+          stats[group.course as Course].students += group.groups.reduce(
             (acc, g) => acc + (g.students?.length || 0),
             0
           );
-          stats[course as Course].activePeriods += 1;
+          stats[group.course as Course].activePeriods += 1;
         }
       });
-    });
 
-    setCourseStats(stats);
+      setCourseStats(stats);
+    } catch (error) {
+      console.error("Erro ao buscar grupos:", error);
+    }
   }, []);
 
   useEffect(() => {
-    countStats();
-    window.addEventListener("storage", countStats);
-    return () => window.removeEventListener("storage", countStats);
-  }, [countStats]);
+    fetchGroups();
+    const interval = setInterval(fetchGroups, 30000); // Atualiza a cada 30 segundos
+    return () => clearInterval(interval);
+  }, [fetchGroups]);
 
   return (
     <>
