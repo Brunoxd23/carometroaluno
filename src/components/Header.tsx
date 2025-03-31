@@ -49,28 +49,31 @@ export default function Header() {
   return (
     <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo e título com efeito hover */}
-          <Link href="/" className="flex items-center group">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 relative -my-4">
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          {/* Logo */}
+          <Link href="/" className="flex items-center">
+            <div className="w-20 h-20 sm:w-28 sm:h-28 relative -my-4">
               <Image
-                src="/logo.png"
+                src="/BASE-CAROMETRO.webp"
                 alt="Logo"
                 fill
                 className="object-contain"
                 priority
               />
             </div>
-            <div className="h-12 border-l border-gray-200 pl-3 flex items-center ml-2">
-              <span className="relative text-lg font-bold bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-                Carometro
-                <span className="hidden sm:inline font-medium"> Alunos</span>
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 transition-all duration-300 group-hover:w-full" />
-              </span>
-            </div>
           </Link>
 
-          {/* Menu Desktop com efeitos hover */}
+          {/* Título Centralizado com Gradiente */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <h1 className="text-xl sm:text-2xl font-bold relative">
+              <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent">
+                Alunos
+              </span>
+              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-full"></span>
+            </h1>
+          </div>
+
+          {/* Menu Desktop */}
           <nav className="hidden md:flex items-center gap-6">
             {navItems.map(({ href, icon: Icon, label }) => (
               <Link
