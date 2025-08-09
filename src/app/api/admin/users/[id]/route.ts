@@ -1,119 +1,110 @@
+// app/api/admin/users/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { ObjectId } from "mongodb";
-import bcrypt from "bcrypt";
 import clientPromise from "@/lib/mongodb";
-import { authOptions } from "../../../auth/[...nextauth]/route";
-import { UserRole } from "@/types";
+import bcrypt from "bcrypt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-// Interfaces para tipagem
-interface UpdateData {
-  name: string;
-  email: string;
-  role: UserRole;
-  courses?: string[];
-  updatedAt: Date;
-  password?: string;
+// Função para extrair o id dos parâmetros
+function getIdFromParams(request: NextRequest) {
+  const url = new URL(request.url);
+  const path = url.pathname;
+  const segments = path.split("/");
+  return segments[segments.length - 1];
 }
 
-// PUT - Atualizar usuário
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+// Verificar se é admin
+async function isAdmin() {
+  const session = await getServerSession(authOptions);
+  return session?.user?.role === "admin";
+}
 
-    // Verifica se o usuário está logado e é admin
-    if (!session || session.user?.role !== "admin") {
+// Handler GET - Obter um usuário por ID
+export async function GET(request: NextRequest) {
+  try {
+    if (!(await isAdmin())) {
       return NextResponse.json(
         { error: "Acesso não autorizado" },
         { status: 403 }
       );
     }
 
-    const userId = params.id;
-    const { name, email, password, role, courses } = await req.json();
-
-    if (!name || !email || !role) {
-      return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
-    }
-
-    // Validação extra: coordenador e docente precisam ter cursos associados
-    if (
-      (role === "coordenador" || role === "docente") &&
-      (!courses || courses.length === 0)
-    ) {
-      return NextResponse.json(
-        {
-          error: `${
-            role === "coordenador" ? "Coordenadores" : "Docentes"
-          } precisam ter pelo menos um curso associado`,
-        },
-        { status: 400 }
-      );
-    }
+    const id = getIdFromParams(request);
 
     const client = await clientPromise;
-    const usersCollection = client.db("carometro").collection("users");
+    const db = client.db("carometro");
 
-    // Verifica se o id é válido
-    let objectId;
-    try {
-      objectId = new ObjectId(userId);
-    } catch (error) {
-      console.error("ID inválido:", error);
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-    }
+    const user = await db
+      .collection("users")
+      .findOne({ _id: new ObjectId(id) });
 
-    // Verifica se o usuário existe
-    const existingUser = await usersCollection.findOne({ _id: objectId });
-    if (!existingUser) {
+    if (!user) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
         { status: 404 }
       );
     }
 
-    // Verifica se o email já está em uso por outro usuário
-    const emailInUse = await usersCollection.findOne({
-      email,
-      _id: { $ne: objectId },
-    });
+    // Remover senha antes de retornar
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userWithoutPassword } = user;
+    return NextResponse.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Erro ao buscar usuário:", error);
+    return NextResponse.json(
+      { error: "Erro ao buscar usuário" },
+      { status: 500 }
+    );
+  }
+}
 
-    if (emailInUse) {
+// Handler PUT - Atualizar um usuário
+export async function PUT(request: NextRequest) {
+  try {
+    if (!(await isAdmin())) {
       return NextResponse.json(
-        { error: "Este email já está sendo usado por outro usuário" },
-        { status: 400 }
+        { error: "Acesso não autorizado" },
+        { status: 403 }
       );
     }
 
-    // Prepara os dados para atualização
-    const updateData: UpdateData = {
-      name,
-      email,
-      role: role as UserRole,
-      courses: courses || [],
-      updatedAt: new Date(),
-    };
+    const id = getIdFromParams(request);
+    const data = await request.json();
 
-    // Se tiver senha, faz o hash
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
+    const client = await clientPromise;
+    const db = client.db("carometro");
+
+    // Validações básicas
+    if (data.email && !data.email.includes("@")) {
+      return NextResponse.json({ error: "Email inválido" }, { status: 400 });
     }
 
-    // Atualiza o usuário
-    await usersCollection.updateOne({ _id: objectId }, { $set: updateData });
+    // Preparar dados para atualização
+    const updateData = { ...data };
 
-    // Retorna o usuário atualizado (sem a senha)
-    const updatedUser = await usersCollection.findOne(
-      { _id: objectId },
-      { projection: { password: 0 } }
-    );
+    // Hash de senha se for fornecida
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+
+    // Remover campos não atualizáveis
+    delete updateData._id;
+
+    const result = await db
+      .collection("users")
+      .updateOne({ _id: new ObjectId(id) }, { $set: updateData });
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { error: "Usuário não encontrado" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       message: "Usuário atualizado com sucesso",
-      user: updatedUser,
+      updated: result.modifiedCount > 0,
     });
   } catch (error) {
     console.error("Erro ao atualizar usuário:", error);
@@ -124,49 +115,33 @@ export async function PUT(
   }
 }
 
-// DELETE - Remover usuário
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Handler DELETE - Excluir um usuário
+export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    // Verifica se o usuário está logado e é admin
-    if (!session || session.user?.role !== "admin") {
+    if (!(await isAdmin())) {
       return NextResponse.json(
         { error: "Acesso não autorizado" },
         { status: 403 }
       );
     }
 
-    const userId = params.id;
+    const id = getIdFromParams(request);
 
     const client = await clientPromise;
-    const usersCollection = client.db("carometro").collection("users");
+    const db = client.db("carometro");
 
-    // Verifica se o id é válido
-    let objectId;
-    try {
-      objectId = new ObjectId(userId);
-    } catch (error) {
-      console.error("ID inválido:", error);
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-    }
-
-    // Impede que o usuário exclua a si mesmo
-    const currentUser = await usersCollection.findOne({
-      email: session.user.email,
-    });
-    if (currentUser && currentUser._id.toString() === objectId.toString()) {
+    // Não permitir exclusão do próprio usuário admin
+    const session = await getServerSession(authOptions);
+    if (session?.user?.id === id) {
       return NextResponse.json(
-        { error: "Você não pode excluir sua própria conta" },
+        { error: "Não é possível excluir seu próprio usuário" },
         { status: 400 }
       );
     }
 
-    // Remove o usuário
-    const result = await usersCollection.deleteOne({ _id: objectId });
+    const result = await db
+      .collection("users")
+      .deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
       return NextResponse.json(
@@ -175,13 +150,11 @@ export async function DELETE(
       );
     }
 
-    return NextResponse.json({
-      message: "Usuário removido com sucesso",
-    });
+    return NextResponse.json({ message: "Usuário excluído com sucesso" });
   } catch (error) {
-    console.error("Erro ao remover usuário:", error);
+    console.error("Erro ao excluir usuário:", error);
     return NextResponse.json(
-      { error: "Erro ao remover usuário" },
+      { error: "Erro ao excluir usuário" },
       { status: 500 }
     );
   }

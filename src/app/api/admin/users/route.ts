@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import bcrypt from "bcrypt";
 import clientPromise from "@/lib/mongodb";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import bcrypt from "bcrypt";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-// GET - Buscar todos os usuários
-export async function GET() {
+// Verificar se é admin
+async function isAdmin() {
+  const session = await getServerSession(authOptions);
+  return session?.user?.role === "admin";
+}
+
+// Listar usuários
+export async function GET(request: NextRequest) {
   try {
-    // Usar authOptions para obter a sessão corretamente
-    const session = await getServerSession(authOptions);
-
-    // Log para debug
-    console.log("Session in /api/admin/users:", session);
-
-    // Verifica se o usuário está logado e é admin
-    if (!session || session.user?.role !== "admin") {
-      console.log("Acesso não autorizado: ", session?.user?.role || "sem role");
+    if (!(await isAdmin())) {
       return NextResponse.json(
         { error: "Acesso não autorizado" },
         { status: 403 }
@@ -23,64 +21,71 @@ export async function GET() {
     }
 
     const client = await clientPromise;
-    const usersCollection = client.db("carometro").collection("users");
+    const db = client.db("carometro");
 
-    const users = await usersCollection
-      .find({}, { projection: { password: 0 } })
+    const role = request.nextUrl.searchParams.get("role");
+    const query = role ? { role } : {};
+
+    const users = await db
+      .collection("users")
+      .find(query)
+      .project({ password: 0 })
+      .sort({ name: 1 })
       .toArray();
 
     return NextResponse.json(users);
   } catch (error) {
-    console.error("Erro ao buscar usuários:", error);
+    console.error("Erro ao listar usuários:", error);
     return NextResponse.json(
-      { error: "Erro ao buscar usuários" },
+      { error: "Erro ao listar usuários" },
       { status: 500 }
     );
   }
 }
 
-// POST - Criar um novo usuário
+// Criar usuário
 export async function POST(request: NextRequest) {
   try {
-    // Usar authOptions para obter a sessão corretamente
-    const session = await getServerSession(authOptions);
-
-    // Verifica se o usuário está logado e é admin
-    if (!session || session.user?.role !== "admin") {
+    if (!(await isAdmin())) {
       return NextResponse.json(
         { error: "Acesso não autorizado" },
         { status: 403 }
       );
     }
 
-    const { name, email, password, role, courses } = await request.json();
+    const userData = await request.json();
 
-    if (!name || !email || !password || !role) {
-      return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
-    }
-
-    const client = await clientPromise;
-    const usersCollection = client.db("carometro").collection("users");
-
-    // Verifica se o email já existe
-    const existingUser = await usersCollection.findOne({ email });
-    if (existingUser) {
+    if (
+      !userData.email ||
+      !userData.name ||
+      !userData.password ||
+      !userData.role
+    ) {
       return NextResponse.json(
-        { error: "Email já cadastrado" },
+        { error: "Todos os campos são obrigatórios" },
         { status: 400 }
       );
     }
 
-    // Hash da senha
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const client = await clientPromise;
+    const db = client.db("carometro");
 
-    // Cria o novo usuário
-    const result = await usersCollection.insertOne({
-      name,
-      email,
+    const existingUser = await db
+      .collection("users")
+      .findOne({ email: userData.email });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "Este email já está em uso" },
+        { status: 400 }
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+
+    const result = await db.collection("users").insertOne({
+      ...userData,
       password: hashedPassword,
-      role,
-      courses: courses || [],
       createdAt: new Date(),
     });
 
