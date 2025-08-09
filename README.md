@@ -1,72 +1,71 @@
 # Carometro Alunos
 
-Sistema de gerenciamento de fotos e informações de alunos por curso, desenvolvido com tecnologias modernas para facilitar a organização de turmas.
+Sistema de gerenciamento de fotos e informações de alunos por curso e período, desenvolvido para facilitar o trabalho de coordenadores, docentes e secretarias acadêmicas.
 
 ## 🚀 Tecnologias
 
-- Next.js 13 (App Router)
+- Next.js 15 com App Router
 - TypeScript
-- Tailwind CSS
-- Cloudinary (armazenamento de imagens)
-- MongoDB (banco de dados)
+- TailwindCSS para UI responsiva
+- MongoDB para persistência de dados
+- NextAuth.js para autenticação
+- Cloudinary para armazenamento de imagens
 
 ## 💡 Funcionalidades
 
-- **Área da Secretaria**
+### Autenticação e Controle de Acesso
 
-  - Criação e gerenciamento de grupos por curso
-  - Adição de alunos via RA
-  - Upload de fotos
-  - Organização por períodos
+- Sistema de login seguro
+- Diferentes níveis de acesso:
+  - **Admin:** acesso total ao sistema
+  - **Secretaria:** gerenciamento de todos os carometros
+  - **Coordenador:** acesso a carometros específicos por curso
+  - **Docente:** visualização de carometros específicos por curso
+  - **Funcionário:** visualização de todos os carometros
 
-- **Visualização de Carometros**
-  - Visualização por curso
-  - Filtro por períodos
-  - Busca por nome ou RA
-  - Interface responsiva
+### Área da Secretaria
 
-## 🎨 Layout
+- Criação e gerenciamento de grupos por curso
+- Adição de alunos via RA
+- Upload e edição de fotos dos alunos
+- Organização por períodos acadêmicos
 
-- Design moderno com Tailwind CSS
-- Temas específicos por curso
-- Animações suaves
-- Interface adaptativa (mobile e desktop)
+### Visualização de Carometros
 
-## 📦 Instalação
+- Navegação intuitiva por curso e período
+- Estatísticas de alunos e grupos
+- Filtro por nome ou RA
+- Interface adaptada para cada curso
+
+### Dashboard
+
+- Visão geral personalizada por tipo de usuário
+- Acesso rápido aos carometros disponíveis
+- Informações sobre cursos e períodos
+
+## 🔧 Instalação e Configuração
 
 ```bash
 # Clonar o repositório
-git clone [https://github.com/Brunoxd23/carometroaluno.git]
+git clone https://github.com/seuusuario/carometroaluno.git
 
 # Entrar na pasta do projeto
-cd carometro-alunos
+cd carometroaluno
 
 # Instalar dependências
 npm install
 
-# Configurar variáveis de ambiente
-# Criar arquivo .env.local com as seguintes variáveis:
-MONGODB_URI=
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=
+# Criar arquivo .env.local com as variáveis necessárias
+MONGODB_URI=sua_uri_mongodb
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=seu_cloud_name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=seu_upload_preset
+NEXT_PUBLIC_CLOUDINARY_API_KEY=sua_api_key
+NEXTAUTH_SECRET=sua_chave_secreta
+NEXTAUTH_URL=http://localhost:3000
 
 # Iniciar o servidor de desenvolvimento
 npm run dev
 ```
-
-## 🌟 Recursos Implementados
-
-- [x] Sistema de navegação entre cursos
-- [x] Gerenciamento de grupos por período
-- [x] Upload e visualização de fotos
-- [x] Busca e filtro de alunos
-- [x] Layout responsivo
-- [x] Temas por curso
-- [x] Animações e transições
-- [x] Integração com Cloudinary
-- [x] Persistência local dos dados
 
 ## 🛠️ Estrutura do Projeto
 
@@ -97,6 +96,11 @@ carometro-alunos/
 
 ## 📝 Licença
 
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+Desenvolvido por Bruno com ❤️
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---

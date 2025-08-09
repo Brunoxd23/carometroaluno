@@ -1,6 +1,22 @@
 export type Course = "Engenharia" | "Fisioterapia" | "Nutrição" | "Odontologia";
 export type Period = `${number}-${number}`;
 
+export type UserRole =
+  | "admin"
+  | "secretaria"
+  | "coordenador"
+  | "docente"
+  | "funcionario";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  courses?: Course[]; // Cursos que o coordenador/docente tem acesso
+  image?: string;
+}
+
 export interface Student {
   id: string;
   name: string;

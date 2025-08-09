@@ -4,10 +4,10 @@ import clientPromise from "@/lib/mongodb";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const ra = searchParams.get("ra");
-  const curso = searchParams.get("curso");
+  const course = searchParams.get("course"); // Alterar de 'curso' para 'course'
   const all = searchParams.get("all"); // Novo parâmetro para buscar todos
 
-  console.log(`Buscando aluno - RA: ${ra}, Curso: ${curso}`); // Log para debug
+  console.log(`Buscando aluno - RA: ${ra}, Curso: ${course}`); // Log para debug
 
   if (!ra && all === null) {
     return NextResponse.json({ error: "RA é obrigatório" }, { status: 400 });
@@ -46,9 +46,10 @@ export async function GET(request: Request) {
       );
     }
 
-    if (curso && student.curso !== curso) {
+    // Alterar verificação de curso
+    if (course && student.course !== course) {
       return NextResponse.json(
-        { error: `Aluno não pertence ao curso de ${curso}` },
+        { error: `Aluno não pertence ao curso de ${course}` },
         { status: 400 }
       );
     }
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
     // Log detalhado do erro
     console.error("Erro na busca do aluno:", {
       ra,
-      curso,
+      course,
       error: error instanceof Error ? error.stack : String(error),
     });
 
@@ -67,7 +68,7 @@ export async function GET(request: Request) {
         error: "Erro ao buscar aluno",
         details: error instanceof Error ? error.message : String(error),
         ra, // Inclui o RA na resposta de erro
-        curso, // Inclui o curso na resposta de erro
+        course, // Alterado de curso para course
       },
       { status: 500 }
     );
@@ -77,9 +78,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { ra, name, curso } = body;
+    const { ra, name, course } = body; // Alterar de curso para course
 
-    if (!ra || !name || !curso) {
+    if (!ra || !name || !course) {
       return NextResponse.json(
         { error: "RA, nome e curso são obrigatórios" },
         { status: 400 }
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
     const result = await db.collection("students").insertOne({
       ra,
       name,
-      curso,
+      course, // Atualizar para course
       photoUrl: "",
       createdAt: new Date(),
     });

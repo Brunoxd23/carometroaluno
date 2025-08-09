@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Group } from "@/types";
+import { Group, Course } from "@/types";
 import {
   TrashIcon,
   UserPlusIcon,
@@ -13,6 +13,8 @@ import Toast from "./Toast";
 interface GroupManagerProps {
   groups: Group[];
   onUpdateGroups: (groups: Group[]) => void;
+  course: Course; // Alterado de curso para course
+  period: string;
 }
 
 interface DeleteConfirmationProps {
@@ -62,11 +64,15 @@ function DeleteConfirmation({
 export default function GroupManager({
   groups,
   onUpdateGroups,
-  curso,
-}: GroupManagerProps & { curso: string }) {
+  course, // Alterado de curso para course
+  period,
+}: GroupManagerProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
   const [groupInputs, setGroupInputs] = useState<Record<string, string>>({});
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     id: string;
@@ -79,15 +85,15 @@ export default function GroupManager({
     studentName: string;
   } | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [selectedCourse] = useState<string>(curso);
-  const [selectedPeriod] = useState<string | null>(null);
+  const [selectedCourse] = useState<string>(course);
+  // Remova o selectedPeriod do useState, use a prop period diretamente
 
   const searchStudent = async (ra: string) => {
     setIsSearching(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/students?ra=${ra}&curso=${curso}`);
+      const response = await fetch(`/api/students?ra=${ra}&curso=${course}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -103,13 +109,17 @@ export default function GroupManager({
     }
   };
 
-  const addGroup = () => {
+  const addGroup = async () => {
     const newGroup: Group = {
       id: `group-${Date.now()}`,
       name: `Grupo ${groups.length + 1}`,
       students: [],
     };
-    handleUpdateGroups([...groups, newGroup]);
+    await handleUpdateGroups([...groups, newGroup]);
+    setToast({
+      message: "Grupo salvo com sucesso!",
+      type: "success",
+    });
   };
 
   const confirmDeleteGroup = (groupId: string, name: string) => {
@@ -141,15 +151,17 @@ export default function GroupManager({
       return group;
     });
 
-    handleUpdateGroups(updatedGroups);
+    handleUpdateGroups(updatedGroups); // Remover o segundo argumento
     setGroupInputs((prev) => ({ ...prev, [groupId]: "" }));
-    setSuccessMessage(`${student.name} adicionado(a) com sucesso!`);
+    setToast({
+      message: `${student.name} adicionado(a) com sucesso!`,
+      type: "success",
+    });
   };
 
   const handleRAChange = (groupId: string, value: string) => {
     setGroupInputs((prev) => ({ ...prev, [groupId]: value }));
     setError(null);
-    setSuccessMessage(null);
   };
 
   const confirmDeleteStudent = (
@@ -164,15 +176,39 @@ export default function GroupManager({
       groupId,
     });
   };
-
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteConfirmation) return;
 
     if (deleteConfirmation.type === "group") {
-      handleUpdateGroups(groups.filter((g) => g.id !== deleteConfirmation.id));
-      setSuccessMessage(
-        `Grupo "${deleteConfirmation.name}" excluído com sucesso`
-      );
+      try {
+        const res = await fetch(
+          `/api/groups?course=${encodeURIComponent(
+            selectedCourse
+          )}&period=${encodeURIComponent(period)}`,
+          { method: "DELETE" }
+        );
+        if (res.ok) {
+          handleUpdateGroups(
+            groups.filter((g) => g.id !== deleteConfirmation.id)
+          );
+          setToast({
+            message: `Grupo "${deleteConfirmation.name}" excluído com sucesso`,
+            type: "error",
+          });
+        } else {
+          setToast({
+            message: "Erro ao excluir grupo no banco de dados.",
+            type: "error",
+          });
+        }
+      } catch (e) {
+        setToast({
+          message: `Erro ao excluir grupo no banco de dados: ${
+            e instanceof Error ? e.message : "Erro desconhecido"
+          }`,
+          type: "error",
+        });
+      }
     } else {
       const updatedGroups = groups.map((group) => {
         if (group.id === deleteConfirmation.groupId) {
@@ -186,9 +222,10 @@ export default function GroupManager({
         return group;
       });
       handleUpdateGroups(updatedGroups);
-      setSuccessMessage(
-        `${deleteConfirmation.name} foi removido(a) com sucesso`
-      );
+      setToast({
+        message: `${deleteConfirmation.name} foi removido(a) com sucesso`,
+        type: "error",
+      });
     }
     setDeleteConfirmation(null);
   };
@@ -238,7 +275,10 @@ export default function GroupManager({
 
         await new Promise((resolve) => setTimeout(resolve, 3000));
         setIsUploadingPhoto(null);
-        setSuccessMessage("Foto atualizada com sucesso!");
+        setToast({
+          message: "Foto atualizada com sucesso!",
+          type: "success",
+        });
       }
     } catch (error) {
       setIsUploadingPhoto(null);
@@ -259,14 +299,14 @@ export default function GroupManager({
   };
 
   const handleUpdateGroups = async (newGroups: Group[]) => {
-    if (!selectedCourse || !selectedPeriod) {
+    if (!selectedCourse || !period) {
       onUpdateGroups(newGroups);
       return;
     }
 
     const newCourseGroup = {
       course: selectedCourse,
-      period: selectedPeriod,
+      period,
       groups: newGroups,
     };
 
@@ -278,11 +318,15 @@ export default function GroupManager({
         },
         body: JSON.stringify(newCourseGroup),
       });
-
       onUpdateGroups(newGroups);
+      // Não exibe toast aqui!
     } catch (error) {
-      console.error("Erro ao salvar grupos:", error);
-      setError("Erro ao salvar grupos. Tente novamente.");
+      setToast({
+        message: `Erro ao salvar grupos: ${
+          error instanceof Error ? error.message : "Tente novamente."
+        }`,
+        type: "error",
+      });
     }
   };
 
@@ -290,26 +334,15 @@ export default function GroupManager({
     <div className="space-y-6">
       {/* Toasts no topo */}
       <div className="fixed right-4 top-24 z-50">
-        {error && (
+        {(toast || error) && (
           <Toast
-            message={error}
-            type="error"
-            onClose={() => setError(null)}
+            message={error ?? toast?.message ?? ""}
+            type={error ? "error" : toast?.type || "error"}
+            onClose={() => {
+              setToast(null);
+              setError(null);
+            }}
             duration={3000}
-            showProgress
-          />
-        )}
-        {successMessage && (
-          <Toast
-            message={successMessage}
-            type={
-              successMessage.includes("excluído") ||
-              successMessage.includes("removido")
-                ? "error"
-                : "success"
-            }
-            onClose={() => setSuccessMessage(null)}
-            duration={2000}
             showProgress
           />
         )}
@@ -320,6 +353,7 @@ export default function GroupManager({
             showSpinner
             showProgress
             duration={3000}
+            onClose={() => setIsUploadingPhoto(null)}
           />
         )}
       </div>

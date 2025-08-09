@@ -1,243 +1,318 @@
 "use client";
 
-import { Course } from "@/types";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   AcademicCapIcon,
-  HeartIcon,
-  ClipboardDocumentIcon,
+  ClipboardDocumentListIcon,
   BeakerIcon,
-  ArrowLeftIcon,
+  HeartIcon,
+  MagnifyingGlassIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
-import Link from "next/link";
-import { gradientClasses } from "@/styles/shared";
-import { useEffect, useState, useCallback } from "react";
+import { Course } from "@/types";
 
+// Interface para o usuário da sessão incluindo role e courses
+interface SessionUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  courses?: Course[];
+}
+
+// Interface para representar um estudante no grupo
+interface Student {
+  id: string;
+  name: string;
+  photoUrl?: string;
+}
+
+// Interface para grupo recuperado da API
+interface CourseGroup {
+  course: Course;
+  period: string;
+  groups: Student[]; // array de estudantes no grupo
+}
+
+// Configuração de ícones e cores para cada curso
 const courseConfig = {
   Engenharia: {
     icon: AcademicCapIcon,
     color: "from-blue-600 to-cyan-500",
     lightColor: "bg-blue-50",
     iconColor: "text-blue-600",
-    borderHover: "hover:border-blue-200",
   },
   Fisioterapia: {
     icon: HeartIcon,
     color: "from-pink-600 to-rose-500",
     lightColor: "bg-pink-50",
     iconColor: "text-pink-600",
-    borderHover: "hover:border-pink-200",
   },
   Nutrição: {
-    icon: ClipboardDocumentIcon,
+    icon: ClipboardDocumentListIcon,
     color: "from-green-600 to-emerald-500",
     lightColor: "bg-green-50",
     iconColor: "text-green-600",
-    borderHover: "hover:border-green-200",
   },
   Odontologia: {
     icon: BeakerIcon,
     color: "from-purple-600 to-indigo-500",
     lightColor: "bg-purple-50",
     iconColor: "text-purple-600",
-    borderHover: "hover:border-purple-200",
   },
 } as const;
 
-interface CourseGroup {
-  course: string;
-  period: string;
-  groups: Array<{
-    name: string;
-    students: Array<{ name: string; photoUrl?: string }>;
-  }>;
-}
-
 export default function CarometrosPage() {
-  const [courseStats, setCourseStats] = useState<
-    Record<
-      Course,
-      {
-        groups: number;
-        students: number;
-        activePeriods: number;
-      }
-    >
-  >({
-    Engenharia: { groups: 0, students: 0, activePeriods: 0 },
-    Fisioterapia: { groups: 0, students: 0, activePeriods: 0 },
-    Nutrição: { groups: 0, students: 0, activePeriods: 0 },
-    Odontologia: { groups: 0, students: 0, activePeriods: 0 },
-  });
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [courseGroups, setCourseGroups] = useState<CourseGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [totalStudentsCount, setTotalStudentsCount] = useState(0);
 
-  const fetchGroups = useCallback(async () => {
-    try {
-      const response = await fetch("/api/groups");
-      const data = await response.json();
-
-      const stats = {
-        Engenharia: { groups: 0, students: 0, activePeriods: 0 },
-        Fisioterapia: { groups: 0, students: 0, activePeriods: 0 },
-        Nutrição: { groups: 0, students: 0, activePeriods: 0 },
-        Odontologia: { groups: 0, students: 0, activePeriods: 0 },
-      };
-
-      data.forEach((group: CourseGroup) => {
-        if (group.groups && group.groups.length > 0) {
-          stats[group.course as Course].groups += group.groups.length;
-          stats[group.course as Course].students += group.groups.reduce(
-            (acc, g) => acc + (g.students?.length || 0),
-            0
-          );
-          stats[group.course as Course].activePeriods += 1;
-        }
-      });
-
-      setCourseStats(stats);
-    } catch (error) {
-      console.error("Erro ao buscar grupos:", error);
-    }
-  }, []);
+  // Extrair usuário da sessão com tipagem adequada
+  const user = session?.user as SessionUser | undefined;
 
   useEffect(() => {
-    fetchGroups();
-    const interval = setInterval(fetchGroups, 30000); // Atualiza a cada 30 segundos
-    return () => clearInterval(interval);
-  }, [fetchGroups]);
+    // Se não estiver autenticado e terminou de carregar, redirecionar
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
+
+    // Só carregar dados se estiver autenticado
+    if (status === "authenticated") {
+      async function fetchGroups() {
+        try {
+          const res = await fetch("/api/groups");
+          const data = await res.json();
+          setCourseGroups(data);
+
+          // Calcular total de alunos
+          const totalStudents = data.reduce(
+            (total: number, group: CourseGroup) => {
+              if (group.groups) {
+                return total + group.groups.length;
+              }
+              return total;
+            },
+            0
+          );
+
+          setTotalStudentsCount(totalStudents);
+        } catch (error) {
+          console.error("Erro ao carregar grupos:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      fetchGroups();
+    }
+  }, [status, router]);
+
+  // Função para verificar se o usuário tem acesso a um curso específico
+  const hasAccessToCourse = (course: Course) => {
+    if (!user) return false;
+
+    if (
+      user.role === "admin" ||
+      user.role === "secretaria" ||
+      user.role === "funcionario"
+    ) {
+      return true;
+    }
+
+    if (
+      (user.role === "coordenador" || user.role === "docente") &&
+      Array.isArray(user.courses)
+    ) {
+      return user.courses.includes(course);
+    }
+
+    return false;
+  };
+
+  // Obter apenas os cursos que o usuário tem acesso
+  const getAccessibleCourses = (): Course[] => {
+    if (!user) return [];
+
+    const allCourses: Course[] = (
+      ["Engenharia", "Fisioterapia", "Nutrição", "Odontologia"] as Course[]
+    ).filter((course) => hasAccessToCourse(course));
+
+    if (
+      user.role === "admin" ||
+      user.role === "secretaria" ||
+      user.role === "funcionario"
+    ) {
+      return allCourses;
+    }
+
+    if (
+      (user.role === "coordenador" || user.role === "docente") &&
+      Array.isArray(user.courses)
+    ) {
+      return user.courses;
+    }
+
+    return [];
+  };
+
+  // Carregamento
+  if (loading || status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  // Obter cursos acessíveis que possuem dados
+  const coursesWithData = getAccessibleCourses().filter((course) =>
+    courseGroups.some((group) => group.course === course)
+  );
+
+  // Filtrar cursos por termo de busca
+  const filteredCourses = coursesWithData.filter((course) =>
+    course.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <>
-      {/* Header Fixo com Borda e Padding Ajustado */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 fixed top-16 left-0 right-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 h-24">
-            {" "}
-            {/* Aumentado height */}
-            <Link
-              href="/"
-              className="p-2.5 rounded-lg hover:bg-gray-100 transition-colors shrink-0"
-            >
-              <ArrowLeftIcon className="w-6 h-6 text-gray-600" />
-            </Link>
-            <h1
-              className={`
-              text-2xl sm:text-3xl
-              font-extrabold
-              tracking-tight
-              ${gradientClasses.text}
-              font-sans
-              relative
-              inline-block
-              after:content-['']
-              after:block
-              after:w-full
-              after:h-1
-              after:bg-gradient-to-r
-              after:from-blue-500
-              after:to-purple-500
-              after:mx-auto
-              after:mt-3
-              after:rounded-full
-            `}
-            >
+    <div className="min-h-screen bg-gray-50 pt-24 pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent mb-2">
               Carometros por Curso
             </h1>
+            <div className="w-32 h-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-400 opacity-80 mb-2"></div>
+            <div className="text-gray-600 text-sm flex items-center gap-1">
+              <UsersIcon className="w-4 h-4" />
+              <span>
+                {totalStudentsCount} alunos em {filteredCourses.length} cursos
+              </span>
+            </div>
+          </div>
+
+          {/* Card com total */}
+          <div className="hidden md:block bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold text-blue-700">
+              {totalStudentsCount}
+            </div>
+            <div className="text-xs text-gray-600">Alunos</div>
           </div>
         </div>
-      </header>
 
-      {/* Container Principal com Padding Aumentado */}
-      <main className="pt-48 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {" "}
-        {/* Aumentado pt-48 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {" "}
-          {/* Aumentado gap-8 */}
-          {(Object.keys(courseConfig) as Course[]).map((course) => {
-            const config = courseConfig[course];
-            const Icon = config.icon;
-            const stats = courseStats[course];
+        {/* Barra de busca */}
+        <div className="mb-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon
+                className="h-5 w-5 text-gray-400"
+                aria-hidden="true"
+              />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Buscar cursos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
 
-            return (
-              <Link
-                key={course}
-                href={`/carometros/${course.toLowerCase()}`}
-                className={`
-                  bg-white/95 
-                  backdrop-blur-sm 
-                  rounded-xl 
-                  shadow-sm 
-                  overflow-hidden 
-                  border border-gray-100 
-                  ${config.borderHover} 
-                  hover:shadow-lg 
-                  hover:-translate-y-1 
-                  transition-all 
-                  duration-300 
-                  group
-                `}
-              >
-                <div className="p-5">
-                  {/* Cabeçalho do Card */}
-                  <div className="flex items-center gap-4 mb-5">
-                    <div className={`p-3 rounded-xl ${config.lightColor}`}>
-                      <Icon className={`w-7 h-7 ${config.iconColor}`} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-gray-800 mb-1">
-                        {course}
-                      </h2>
-                      <p className="text-sm text-gray-500">
-                        {stats.activePeriods > 0
-                          ? `${stats.activePeriods} ${
-                              stats.activePeriods === 1 ? "período" : "períodos"
-                            }`
-                          : "Sem períodos"}
-                      </p>
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredCourses.length > 0 ? (
+            filteredCourses.map((course) => {
+              // Configurações para este curso
+              const config = courseConfig[course];
+              const Icon = config.icon;
 
-                  {/* Estatísticas */}
-                  <div className="grid grid-cols-2 gap-3 mb-5">
-                    <div
-                      className={`${config.lightColor} rounded-lg p-2 text-center`}
-                    >
-                      <p className={`text-xl font-bold ${config.iconColor}`}>
-                        {stats.groups}
-                      </p>
-                      <p className="text-xs text-gray-600">Grupos</p>
-                    </div>
-                    <div
-                      className={`${config.lightColor} rounded-lg p-2 text-center`}
-                    >
-                      <p className={`text-xl font-bold ${config.iconColor}`}>
-                        {stats.students}
-                      </p>
-                      <p className="text-xs text-gray-600">Alunos</p>
-                    </div>
-                  </div>
+              // Contagem de períodos disponíveis
+              const periodsForCourse = courseGroups.filter(
+                (group) => group.course === course
+              );
 
-                  {/* Botão Visualizar */}
+              const periodsCount = periodsForCourse.length;
+
+              // Contagem de alunos por curso
+              const studentsCount = periodsForCourse.reduce(
+                (total: number, group: CourseGroup) => {
+                  if (group.groups) {
+                    return total + group.groups.length;
+                  }
+                  return total;
+                },
+                0
+              );
+
+              return (
+                <div
+                  key={course}
+                  className="bg-white rounded-xl shadow overflow-hidden border border-gray-100 hover:border-gray-200 transition-colors hover:shadow-md"
+                >
                   <div
-                    className={`
-                    flex items-center justify-between 
-                    px-4 py-2.5 
-                    rounded-lg 
-                    bg-gradient-to-r ${config.color}
-                    text-white 
-                    opacity-90 
-                    group-hover:opacity-100 
-                    transition-all
-                  `}
+                    className={`p-4 bg-gradient-to-r ${config.color} text-white`}
                   >
-                    <span className="font-medium">Visualizar</span>
-                    <span className="text-lg">→</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-white/20">
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <h2 className="text-lg font-semibold">{course}</h2>
+                      </div>
+                      <div className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                        {periodsCount} períodos
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <div className="mb-3 flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <UsersIcon className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-700">
+                          {studentsCount} alunos
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium bg-gray-100 rounded-full px-2 py-1">
+                        {periodsCount} períodos
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/carometros/${course}`)}
+                      className={`block w-full py-3 px-4 text-center rounded-lg ${config.lightColor} ${config.iconColor} font-medium hover:opacity-90 transition-all`}
+                    >
+                      Ver Períodos
+                    </button>
                   </div>
                 </div>
-              </Link>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="col-span-full bg-amber-50 border border-amber-200 p-6 rounded-lg text-center">
+              <p className="text-amber-700">
+                {searchTerm
+                  ? "Nenhum curso encontrado para a busca."
+                  : "Não foram encontrados carometros disponíveis."}
+              </p>
+            </div>
+          )}
         </div>
-      </main>
-    </>
+
+        {coursesWithData.length === 0 && user?.role === "coordenador" && (
+          <div className="mt-6 bg-blue-50 border border-blue-200 p-6 rounded-lg">
+            <p className="text-blue-700">
+              Você tem acesso apenas a cursos específicos. Por favor, contate o
+              administrador caso precise de acesso a outros cursos.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

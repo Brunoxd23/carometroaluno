@@ -2,19 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 248, 250, 252;
+@layer base {
+  :root {
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 214, 219, 220;
+    --background-end-rgb: 255, 255, 255;
+
+    /* Cores dos cursos */
+    --engenharia-primary: #2563eb; /* blue-600 */
+    --engenharia-secondary: #06b6d4; /* cyan-500 */
+
+    --fisioterapia-primary: #db2777; /* pink-600 */
+    --fisioterapia-secondary: #f43f5e; /* rose-500 */
+
+    --nutrição-primary: #16a34a; /* green-600 */
+    --nutrição-secondary: #10b981; /* emerald-500 */
+
+    --odontologia-primary: #7c3aed; /* purple-600 */
+    --odontologia-secondary: #6366f1; /* indigo-500 */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --foreground-rgb: 255, 255, 255;
+      --background-start-rgb: 0, 0, 0;
+      --background-end-rgb: 0, 0, 0;
+    }
+  }
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  background: rgb(var(--background-end-rgb));
 }
 
 .gap-3 {
   gap: 0.75rem;
   margin-top: 15px;
+}
+
+.py-2\.5 {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+  color: black;
 }
 
 @keyframes slideIn {
@@ -43,6 +73,18 @@ body {
 
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out;
+}
+
+/* Animação para fade-in de elementos */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @layer utilities {

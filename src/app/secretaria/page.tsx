@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Course, Period, CourseGroup, Group } from "@/types";
 import GroupManager from "@/components/GroupManager";
 import {
@@ -12,7 +12,6 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { gradientClasses } from "@/styles/shared";
-import React from "react";
 
 const courses: Course[] = [
   "Engenharia",
@@ -94,8 +93,25 @@ export default function SecretariaPage() {
     setShowCourseSelector(true);
   };
 
-  const handleUpdateGroups = (newGroups: Group[]) => {
+  const handleUpdateGroups = async (newGroups: Group[]) => {
     if (!selectedCourse || !selectedPeriod) return;
+
+    // salvar no banco de dados
+    try {
+      await fetch("/api/groups", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          course: selectedCourse,
+          period: selectedPeriod,
+          groups: newGroups,
+        }),
+      });
+    } catch (error) {
+      console.error("Error saving groups:", error);
+    }
 
     const updatedGroups = courseGroups.filter(
       (cg) => cg.course !== selectedCourse || cg.period !== selectedPeriod
@@ -346,7 +362,8 @@ export default function SecretariaPage() {
                 <GroupManager
                   groups={getCurrentGroups()}
                   onUpdateGroups={handleUpdateGroups}
-                  curso={selectedCourse!}
+                  course={selectedCourse!}
+                  period={selectedPeriod!} // <-- Passe o período selecionado aqui
                 />
               </main>
             </div>
