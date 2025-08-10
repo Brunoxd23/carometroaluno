@@ -41,41 +41,86 @@ export const authOptions: AuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Senha", type: "password" },
+        isTokenLogin: { label: "Token Login", type: "text" }, // Campo para identificar login via token
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.email) {
           return null;
         }
 
         try {
-          const client = await clientPromise;
-          const usersCollection = client.db("carometro").collection("users");
+          // Verificar se é login via token
+          if (credentials.isTokenLogin === "true") {
+            // Neste caso, não verificamos senha, apenas email
+            // O token já foi verificado na API /api/auth/login
+            const client = await clientPromise;
+            const usersCollection = client.db("carometro").collection("users");
 
-          const user = await usersCollection.findOne({
-            email: credentials.email,
-          });
+            const user = await usersCollection.findOne({
+              email: credentials.email,
+            });
 
-          if (!user) {
-            throw new Error("Usuário não encontrado");
+            if (!user) {
+              throw new Error("Usuário não encontrado");
+            }
+
+            // Não realizamos verificação de senha aqui
+            // Esta autenticação só é válida se o token foi verificado anteriormente
+
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password: _password, ...userWithoutPassword } = user;
+
+            return {
+              id: user._id.toString(),
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              courses: user.courses || [],
+              image: user.image || null,
+            };
+          }
+          // Login normal com verificação de senha (mantido para compatibilidade, mas não deve ser usado)
+          else if (credentials.password) {
+            // Esta parte pode ser removida se você estiver usando apenas o novo fluxo
+            const client = await clientPromise;
+            const usersCollection = client.db("carometro").collection("users");
+
+            // Criar cópia das credenciais para uso local e depois limpar
+            const emailToCheck = credentials.email;
+            const passwordToCheck = credentials.password;
+
+            const user = await usersCollection.findOne({
+              email: emailToCheck,
+            });
+
+            if (!user) {
+              throw new Error("Usuário não encontrado");
+            }
+
+            const passwordMatch = await bcrypt.compare(
+              passwordToCheck,
+              user.password
+            );
+
+            if (!passwordMatch) {
+              throw new Error("Senha incorreta");
+            }
+
+            // Remover o campo password de forma segura sem gerar avisos do ESLint
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password: _password, ...userWithoutPassword } = user;
+
+            return {
+              id: user._id.toString(),
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              courses: user.courses || [],
+              image: user.image || null,
+            };
           }
 
-          const passwordMatch = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
-
-          if (!passwordMatch) {
-            throw new Error("Senha incorreta");
-          }
-
-          return {
-            id: user._id.toString(),
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            courses: user.courses || [],
-            image: user.image || null,
-          };
+          return null;
         } catch (error) {
           console.error("Erro na autenticação:", error);
           return null;
@@ -93,6 +138,7 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.courses = user.courses;
+        // Nunca inclua a senha no token
       }
       return token;
     },

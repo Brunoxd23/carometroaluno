@@ -22,6 +22,13 @@
     --odontologia-secondary: #6366f1; /* indigo-500 */
   }
 
+  /* Garanta que todos os inputs tenham texto preto por padrão */
+  input,
+  textarea,
+  select {
+    @apply text-gray-900;
+  }
+
   @media (prefers-color-scheme: dark) {
     :root {
       --foreground-rgb: 255, 255, 255;
