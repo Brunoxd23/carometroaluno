@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Course, Period, CourseGroup, Group } from "@/types";
 import GroupManager from "@/components/GroupManager";
 import {
@@ -93,10 +93,28 @@ export default function SecretariaPage() {
     setShowCourseSelector(true);
   };
 
+  // Função para buscar dados dos grupos diretamente da API
+  useEffect(() => {
+    async function fetchGroups() {
+      try {
+        const response = await fetch("/api/groups?all=true");
+        if (!response.ok) {
+          throw new Error("Erro ao buscar grupos");
+        }
+        const data = await response.json();
+        setCourseGroups(data);
+      } catch (error) {
+        console.error("Erro ao carregar grupos:", error);
+      }
+    }
+
+    fetchGroups();
+  }, []);
+
+  // Atualizar grupos e sincronizar com o backend
   const handleUpdateGroups = async (newGroups: Group[]) => {
     if (!selectedCourse || !selectedPeriod) return;
 
-    // salvar no banco de dados
     try {
       await fetch("/api/groups", {
         method: "POST",
@@ -109,34 +127,22 @@ export default function SecretariaPage() {
           groups: newGroups,
         }),
       });
+
+      const updatedGroups = courseGroups.filter(
+        (cg) => cg.course !== selectedCourse || cg.period !== selectedPeriod
+      );
+
+      const newCourseGroup: CourseGroup = {
+        course: selectedCourse,
+        period: selectedPeriod,
+        groups: newGroups,
+      };
+
+      const finalGroups = [...updatedGroups, newCourseGroup];
+      setCourseGroups(finalGroups);
     } catch (error) {
-      console.error("Error saving groups:", error);
+      console.error("Erro ao salvar grupos:", error);
     }
-
-    const updatedGroups = courseGroups.filter(
-      (cg) => cg.course !== selectedCourse || cg.period !== selectedPeriod
-    );
-
-    const newCourseGroup: CourseGroup = {
-      course: selectedCourse,
-      period: selectedPeriod,
-      groups: newGroups,
-    };
-
-    const finalGroups = [...updatedGroups, newCourseGroup];
-    setCourseGroups(finalGroups);
-
-    // Save to localStorage
-    localStorage.setItem("carometro-groups", JSON.stringify(finalGroups));
-    localStorage.setItem(
-      `carometro-${selectedCourse.toLowerCase()}-${selectedPeriod}`,
-      JSON.stringify(newCourseGroup)
-    );
-
-    // Force UI update
-    setTimeout(() => {
-      window.dispatchEvent(new Event("storage"));
-    }, 100);
   };
 
   const getCurrentGroups = () => {

@@ -33,7 +33,7 @@ interface Student {
 interface CourseGroup {
   course: Course;
   period: string;
-  groups: Student[]; // array de estudantes no grupo
+  groups: { students: Student[] }[]; // array de grupos contendo arrays de estudantes
 }
 
 // Configuração de ícones e cores para cada curso
@@ -90,13 +90,18 @@ export default function CarometrosPage() {
           const data = await res.json();
           setCourseGroups(data);
 
-          // Calcular total de alunos
+          console.log("Dados carregados do banco:", data);
+
+          // Calcular total de alunos considerando todos os grupos
           const totalStudents = data.reduce(
             (total: number, group: CourseGroup) => {
-              if (group.groups) {
-                return total + group.groups.length;
-              }
-              return total;
+              return (
+                total +
+                group.groups.reduce(
+                  (sum, studentGroup) => sum + studentGroup.students.length,
+                  0
+                )
+              );
             },
             0
           );
@@ -242,10 +247,13 @@ export default function CarometrosPage() {
               // Contagem de alunos por curso
               const studentsCount = periodsForCourse.reduce(
                 (total: number, group: CourseGroup) => {
-                  if (group.groups) {
-                    return total + group.groups.length;
-                  }
-                  return total;
+                  return (
+                    total +
+                    group.groups.reduce(
+                      (sum, groupObj) => sum + groupObj.students.length,
+                      0
+                    )
+                  );
                 },
                 0
               );
@@ -265,7 +273,9 @@ export default function CarometrosPage() {
                         </div>
                         <h2 className="text-lg font-semibold">{course}</h2>
                       </div>
-                      <div className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                      <div
+                        className={`bg-white/20 px-2 py-1 rounded-full text-xs ${config.iconColor}`}
+                      >
                         {periodsCount} períodos
                       </div>
                     </div>
@@ -279,7 +289,9 @@ export default function CarometrosPage() {
                           {studentsCount} alunos
                         </span>
                       </div>
-                      <span className="text-xs font-medium bg-gray-100 rounded-full px-2 py-1">
+                      <span
+                        className={`text-xs font-medium rounded-full px-2 py-1 ${config.lightColor} ${config.iconColor}`}
+                      >
                         {periodsCount} períodos
                       </span>
                     </div>

@@ -73,42 +73,34 @@ export default function CarometroPage() {
     async function fetchCarometro() {
       try {
         setLoading(true);
-        console.log(`Buscando dados para ${course}/${period}`);
-
         const response = await fetch(
           `/api/groups?course=${course}&period=${period}`
         );
-        console.log("Status da resposta:", response.status);
-
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log("Dados recebidos:", data);
-
-        // Encontrar o grupo do curso e período específicos
         const groupData = Array.isArray(data)
           ? data.find(
               (group) => group.course === course && group.period === period
             )
           : null;
 
-        console.log("Grupo encontrado:", groupData);
-
         if (!groupData) {
-          setError("Carometro não encontrado para este curso e período");
+          setError("Nenhum carômetro disponível para este curso e período.");
+          setCourseGroup({ course, period, groups: [] }); // Define um estado vazio
           return;
         }
 
         setCourseGroup(groupData);
-        // Calcular total de alunos
+
+        // Atualizar total de alunos diretamente sem condicional
         const studentsCount =
-          groupData.groups?.reduce(
-            (total: number, group: Group) =>
-              total + (group.students?.length || 0),
-            0
-          ) || 0;
+          groupData.groups?.reduce((total: number, group: Group) => {
+            return total + (group.students?.length || 0);
+          }, 0) || 0;
+
         setTotalStudents(studentsCount);
       } catch (err) {
         console.error("Erro ao buscar dados do carometro:", err);
