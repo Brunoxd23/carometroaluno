@@ -53,7 +53,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const removeToast = useCallback((id: string) => {
-    dispatch({ type: "REMOVE_TOAST", toastId: id });
+    setTimeout(() => {
+      dispatch({ type: "REMOVE_TOAST", toastId: id });
+    }, 0);
   }, []);
 
   return (
