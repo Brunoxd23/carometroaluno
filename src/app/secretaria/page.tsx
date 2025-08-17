@@ -54,6 +54,8 @@ const courseConfig = {
   },
 } as const;
 
+/* FotoUpload component removed because it was defined but never used. */
+
 export default function SecretariaPage() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);

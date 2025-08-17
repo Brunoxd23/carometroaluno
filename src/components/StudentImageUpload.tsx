@@ -23,18 +23,18 @@ export default function StudentImageUpload({
       setLoading(true);
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "carometro"); // Seu upload preset do Cloudinary
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
+      // Upload para Vercel Blob
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       const data = await response.json();
-      onImageChange(data.secure_url);
+      if (data.url) {
+        onImageChange(data.url);
+      } else {
+        throw new Error("No URL in response");
+      }
     } catch (error) {
       console.error("Erro ao fazer upload:", error);
     } finally {

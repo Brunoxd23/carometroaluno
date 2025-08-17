@@ -240,29 +240,22 @@ export default function GroupManager({
       setIsUploadingPhoto({ studentId, studentName });
       const formData = new FormData();
       formData.append("file", file);
-      formData.append(
-        "upload_preset",
-        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
-      );
 
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
+      // Upload para Vercel Blob
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       const data = await response.json();
 
-      if (data.secure_url) {
+      if (data.url) {
         const updatedGroups = groups.map((group) => {
           if (group.id === groupId) {
             return {
               ...group,
               students: group.students.map((student) => {
                 if (student.id === studentId) {
-                  return { ...student, photoUrl: data.secure_url };
+                  return { ...student, photoUrl: data.url };
                 }
                 return student;
               }),

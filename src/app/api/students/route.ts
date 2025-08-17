@@ -78,7 +78,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { ra, name, course } = body; // Alterar de curso para course
+    const { ra, name, course, photoUrl } = body;
 
     if (!ra || !name || !course) {
       return NextResponse.json(
@@ -96,12 +96,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "RA já cadastrado" }, { status: 400 });
     }
 
-    // Insere novo aluno
+    // Insere novo aluno, incluindo a foto
     const result = await db.collection("students").insertOne({
       ra,
       name,
-      course, // Atualizar para course
-      photoUrl: "",
+      course,
+      photoUrl: photoUrl || "",
       createdAt: new Date(),
     });
 

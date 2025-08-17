@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { UserCircleIcon } from "@heroicons/react/24/outline";
-import { cloudinaryConfig } from "@/config/cloudinary";
 
 interface ImageUploadProps {
   currentImage?: string;
@@ -33,26 +32,21 @@ export default function ImageUpload({
       // Preparar form data para upload
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", cloudinaryConfig.uploadPreset!);
-      formData.append("cloud_name", cloudinaryConfig.cloudName!);
 
-      // Fazer upload para Cloudinary
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
+      // Fazer upload para Vercel Blob
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       const data = await response.json();
-
-      if (data.secure_url) {
-        onImageUpload(data.secure_url);
-        setPreviewUrl(data.secure_url);
+      if (data.url) {
+        onImageUpload(data.url);
+      } else {
+        throw new Error("No URL in response");
       }
     } catch (error) {
       console.error("Erro no upload:", error);
+      alert("Erro ao fazer upload da imagem. Tente novamente.");
     } finally {
       setIsUploading(false);
     }

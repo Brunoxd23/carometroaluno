@@ -7,6 +7,11 @@ const nextConfig = {
         hostname: "res.cloudinary.com",
         pathname: "/nextjs-image/**",
       },
+      {
+        protocol: "https",
+        hostname: "cdpofjje4o4wmpuy.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
     ],
   },
 };

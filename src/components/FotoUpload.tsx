@@ -13,40 +13,20 @@ export default function FotoUpload({ onUpload, fotoAtual }: FotoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadToCloudinary = async (file: File) => {
+  const uploadToBlob = async (file: File) => {
     try {
       setIsUploading(true);
       const formData = new FormData();
-
-      // Add required Cloudinary parameters
       formData.append("file", file);
-      formData.append("upload_preset", "carometro_preset");
-      formData.append(
-        "cloud_name",
-        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || ""
-      );
-
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Upload error:", errorData);
-        throw new Error("Upload failed");
-      }
-
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       const data = await response.json();
-      console.log("Upload successful:", data);
-
-      if (data.secure_url) {
-        onUpload(data.secure_url);
+      if (data.url) {
+        onUpload(data.url);
       } else {
-        throw new Error("No secure URL in response");
+        throw new Error("No URL in response");
       }
     } catch (error) {
       console.error("Erro no upload:", error);
@@ -59,7 +39,7 @@ export default function FotoUpload({ onUpload, fotoAtual }: FotoUploadProps) {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      uploadToCloudinary(file);
+      uploadToBlob(file);
     }
   };
 
