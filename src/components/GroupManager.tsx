@@ -493,12 +493,7 @@ export default function GroupManager({
                               />
                               {isUploadingPhoto?.studentId === student.id ? (
                                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                  <div className="text-center">
-                                    <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                                    <span className="text-white text-sm">
-                                      Carregando...
-                                    </span>
-                                  </div>
+                                  <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin" />
                                 </div>
                               ) : (
                                 <div className="absolute inset-0 bg-black/0 group-hover/upload:bg-black/20 flex items-center justify-center transition-all">
