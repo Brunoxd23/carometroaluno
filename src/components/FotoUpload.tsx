@@ -3,6 +3,7 @@
 import { UserCircleIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { useState, useRef } from "react";
+import { useToast } from "./ui/ToastContext";
 
 interface FotoUploadProps {
   onUpload: (url: string) => void;
@@ -13,9 +14,18 @@ export default function FotoUpload({ onUpload, fotoAtual }: FotoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { toast } = useToast();
   const uploadToBlob = async (file: File) => {
     try {
       setIsUploading(true);
+      toast({
+        message: "Carregando foto...",
+        type: "info",
+        onClose: () => {},
+        showSpinner: true,
+        showProgress: true,
+        duration: 2000,
+      });
       const formData = new FormData();
       formData.append("file", file);
       const response = await fetch("/api/upload", {
@@ -25,12 +35,21 @@ export default function FotoUpload({ onUpload, fotoAtual }: FotoUploadProps) {
       const data = await response.json();
       if (data.url) {
         onUpload(data.url);
+        toast({
+          message: "Foto enviada e salva com sucesso.",
+          type: "success",
+          onClose: () => {},
+        });
       } else {
         throw new Error("No URL in response");
       }
     } catch (error) {
       console.error("Erro no upload:", error);
-      alert("Erro ao fazer upload da imagem. Tente novamente.");
+      toast({
+        message: "Erro ao fazer upload da imagem. Tente novamente.",
+        type: "error",
+        onClose: () => {},
+      });
     } finally {
       setIsUploading(false);
     }
@@ -57,11 +76,8 @@ export default function FotoUpload({ onUpload, fotoAtual }: FotoUploadProps) {
         disabled={isUploading}
         className="w-full h-full rounded-full overflow-hidden border-3 border-primary/20 hover:border-primary/50 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
-        {isUploading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
-        ) : fotoAtual ? (
+        {/* O Toast global já mostra o spinner, não precisa duplicar aqui */}
+        {fotoAtual ? (
           <div className="relative w-full h-full">
             <Image
               src={fotoAtual}

@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+// import { useState } from "react"; // removido, não usado
 import Image from "next/image";
 import { UserCircleIcon } from "@heroicons/react/24/outline";
+// Update the import path below to match the actual location of use-toast, for example:
+import { useToast } from "./ui/ToastContext";
+// If you do not have use-toast, you can create a simple toast hook or use a library like react-hot-toast.
 
 interface StudentImageUploadProps {
   photoUrl?: string;
@@ -13,14 +16,23 @@ export default function StudentImageUpload({
   photoUrl,
   onImageChange,
 }: StudentImageUploadProps) {
-  const [loading, setLoading] = useState(false);
+  // Estado de loading removido, feedback visual via Toast
+  const { toast } = useToast();
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // setLoading(true); // removido, feedback via Toast
+    toast({
+      message: "Carregando foto...",
+      type: "info",
+      onClose: () => {},
+      showSpinner: true,
+      showProgress: true,
+      duration: 2000,
+    });
     try {
-      setLoading(true);
       const formData = new FormData();
       formData.append("file", file);
 
@@ -32,13 +44,23 @@ export default function StudentImageUpload({
       const data = await response.json();
       if (data.url) {
         onImageChange(data.url);
+        toast({
+          message: "Foto enviada e salva com sucesso.",
+          type: "success",
+          onClose: () => {},
+        });
       } else {
         throw new Error("No URL in response");
       }
     } catch (error) {
       console.error("Erro ao fazer upload:", error);
+      toast({
+        message: "Falha ao enviar a foto.",
+        type: "error",
+        onClose: () => {},
+      });
     } finally {
-      setLoading(false);
+      // setLoading(false); // removido, feedback via Toast
     }
   };
 
@@ -63,11 +85,7 @@ export default function StudentImageUpload({
             <UserCircleIcon className="w-12 h-12 text-gray-400" />
           </div>
         )}
-        {loading && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
+        {/* O Toast global já mostra o spinner, não precisa duplicar aqui */}
       </div>
       <div className="mt-2 text-xs text-center text-gray-500 group-hover:text-blue-600">
         {photoUrl ? "Clique para alterar" : "Adicionar foto"}

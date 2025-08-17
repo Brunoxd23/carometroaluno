@@ -4,6 +4,8 @@ import "./globals.css";
 import GlobalStyles from "@/components/GlobalStyles";
 import { SessionProvider } from "@/providers/SessionProvider";
 import LayoutClient from "@/components/LayoutClient";
+import ToastGlobal from "@/components/ToastGlobal"; // Use o componente que você já tem
+import { ToastProvider } from "@/components/ui/ToastContext";
 
 const inter = Inter({ subsets: ["latin"] });
 const orbitron = Orbitron({ subsets: ["latin"] });
@@ -21,10 +23,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-transparent`}>
         <SessionProvider>
-          <GlobalStyles fontFamily={orbitron.style.fontFamily} />
-          <LayoutClient>{children}</LayoutClient>
+          <ToastProvider>
+            <GlobalStyles fontFamily={orbitron.style.fontFamily} />
+            <LayoutClient>{children}</LayoutClient>
+            <ToastGlobal /> {/* Use o componente que você já criou */}
+          </ToastProvider>
         </SessionProvider>
       </body>
     </html>

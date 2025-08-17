@@ -8,7 +8,8 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
-import Toast from "./Toast";
+// import Toast from "./Toast"; // removido, Toast global
+import { useToast } from "./ui/ToastContext";
 
 interface GroupManagerProps {
   groups: Group[];
@@ -68,11 +69,8 @@ export default function GroupManager({
   period,
 }: GroupManagerProps) {
   const [isSearching, setIsSearching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-  } | null>(null);
+  // const [error, setError] = useState<string | null>(null); // removido
+  // const [localToast, setLocalToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null); // removido
   const [groupInputs, setGroupInputs] = useState<Record<string, string>>({});
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     id: string;
@@ -87,10 +85,15 @@ export default function GroupManager({
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedCourse] = useState<string>(course);
   // Remova o selectedPeriod do useState, use a prop period diretamente
+  const { toast } = useToast();
+  // const [toastState, setToastState] = useState<{
+  //   message: string;
+  //   type: "success" | "error" | "info";
+  // } | null>(null);
 
   const searchStudent = async (ra: string) => {
     setIsSearching(true);
-    setError(null);
+    // setError(null); // removido
 
     try {
       const response = await fetch(`/api/students?ra=${ra}&curso=${course}`);
@@ -101,8 +104,8 @@ export default function GroupManager({
       }
 
       return data;
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Erro ao buscar aluno");
+    } catch {
+      // setError(error instanceof Error ? error.message : "Erro ao buscar aluno"); // removido
       return null;
     } finally {
       setIsSearching(false);
@@ -116,10 +119,15 @@ export default function GroupManager({
       students: [],
     };
     await handleUpdateGroups([...groups, newGroup]);
-    setToast({
+    toast({
       message: "Grupo salvo com sucesso!",
       type: "success",
+      onClose: () => {},
     });
+    // setToastState({
+    //   message: "Grupo salvo com sucesso!",
+    //   type: "success",
+    // });
   };
 
   const confirmDeleteGroup = (groupId: string, name: string) => {
@@ -153,15 +161,20 @@ export default function GroupManager({
 
     handleUpdateGroups(updatedGroups); // Remover o segundo argumento
     setGroupInputs((prev) => ({ ...prev, [groupId]: "" }));
-    setToast({
+    toast({
       message: `${student.name} adicionado(a) com sucesso!`,
       type: "success",
+      onClose: () => {},
     });
+    // setToastState({
+    //   message: `${student.name} adicionado(a) com sucesso!`,
+    //   type: "success",
+    // });
   };
 
   const handleRAChange = (groupId: string, value: string) => {
     setGroupInputs((prev) => ({ ...prev, [groupId]: value }));
-    setError(null);
+    // setError(null); // removido
   };
 
   const confirmDeleteStudent = (
@@ -191,23 +204,40 @@ export default function GroupManager({
           handleUpdateGroups(
             groups.filter((g) => g.id !== deleteConfirmation.id)
           );
-          setToast({
+          toast({
             message: `Grupo "${deleteConfirmation.name}" excluído com sucesso`,
-            type: "error",
+            type: "success",
+            onClose: () => {},
           });
+          // setToastState({
+          //   message: `Grupo \"${deleteConfirmation.name}\" excluído com sucesso`,
+          //   type: "error",
+          // });
         } else {
-          setToast({
+          toast({
             message: "Erro ao excluir grupo no banco de dados.",
             type: "error",
+            onClose: () => {},
           });
+          // setToastState({
+          //   message: "Erro ao excluir grupo no banco de dados.",
+          //   type: "error",
+          // });
         }
       } catch (e) {
-        setToast({
+        toast({
           message: `Erro ao excluir grupo no banco de dados: ${
             e instanceof Error ? e.message : "Erro desconhecido"
           }`,
           type: "error",
+          onClose: () => {},
         });
+        // setToastState({
+        //   message: `Erro ao excluir grupo no banco de dados: ${
+        //     e instanceof Error ? e.message : "Erro desconhecido"
+        //   }`,
+        //   type: "error",
+        // });
       }
     } else {
       const updatedGroups = groups.map((group) => {
@@ -222,10 +252,15 @@ export default function GroupManager({
         return group;
       });
       handleUpdateGroups(updatedGroups);
-      setToast({
+      toast({
         message: `${deleteConfirmation.name} foi removido(a) com sucesso`,
-        type: "error",
+        type: "success",
+        onClose: () => {},
       });
+      // setToastState({
+      //   message: `${deleteConfirmation.name} foi removido(a) com sucesso`,
+      //   type: "error",
+      // });
     }
     setDeleteConfirmation(null);
   };
@@ -265,21 +300,33 @@ export default function GroupManager({
         });
 
         handleUpdateGroups(updatedGroups);
-
+        toast({
+          message: "Foto do aluno atualizada com sucesso!",
+          type: "success",
+          onClose: () => {},
+        });
+        // setToastState({
+        //   message: "Foto atualizada com sucesso!",
+        //   type: "success",
+        // });
         await new Promise((resolve) => setTimeout(resolve, 3000));
         setIsUploadingPhoto(null);
-        setToast({
-          message: "Foto atualizada com sucesso!",
-          type: "success",
-        });
       }
     } catch (error) {
       setIsUploadingPhoto(null);
-      setError(
-        `Erro ao fazer upload da imagem: ${
+      toast({
+        message: `Erro ao fazer upload da imagem: ${
           error instanceof Error ? error.message : "Erro desconhecido"
-        }`
-      );
+        }`,
+        type: "error",
+        onClose: () => {},
+      });
+      // setToastState({
+      //   message: `Erro ao fazer upload da imagem: ${
+      //     error instanceof Error ? error.message : "Erro desconhecido"
+      //   }`,
+      //   type: "error",
+      // });
     }
   };
 
@@ -314,42 +361,19 @@ export default function GroupManager({
       onUpdateGroups(newGroups);
       // Não exibe toast aqui!
     } catch (error) {
-      setToast({
+      toast({
         message: `Erro ao salvar grupos: ${
           error instanceof Error ? error.message : "Tente novamente."
         }`,
         type: "error",
+        onClose: () => {},
       });
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Toasts no topo */}
-      <div className="fixed right-4 top-24 z-50">
-        {(toast || error) && (
-          <Toast
-            message={error ?? toast?.message ?? ""}
-            type={error ? "error" : toast?.type || "error"}
-            onClose={() => {
-              setToast(null);
-              setError(null);
-            }}
-            duration={3000}
-            showProgress
-          />
-        )}
-        {isUploadingPhoto && (
-          <Toast
-            message={`Carregando foto de ${isUploadingPhoto.studentName}...`}
-            type="info"
-            showSpinner
-            showProgress
-            duration={3000}
-            onClose={() => setIsUploadingPhoto(null)}
-          />
-        )}
-      </div>
+      {/* Toasts globais são disparados via hook useToast */}
 
       {/* Barra de ações fixa */}
       <div className="sticky top-[4.5rem] z-20 bg-gray-50 -mx-6 px-6">

@@ -1,108 +1,73 @@
 "use client";
-
 import { useEffect, useState } from "react";
-import {
-  XMarkIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  InformationCircleIcon,
-} from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
-interface ToastProps {
+export interface ToastProps {
   message: string;
   type: "success" | "error" | "info";
   onClose: () => void;
   duration?: number;
   showProgress?: boolean;
-  showSpinner?: boolean; // Nova propriedade para exibir spinner
+  showSpinner?: boolean;
 }
 
 export default function Toast({
   message,
   type,
   onClose,
-  duration = 3000,
+  duration = 2000,
   showProgress = false,
-  showSpinner = false, // Inicializado como false
+  showSpinner = false,
 }: ToastProps) {
-  const [progress, setProgress] = useState(100);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (duration && duration > 0) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, duration);
-
-      // Atualizar barra de progresso
-      if (showProgress) {
-        const intervalTime = 10;
-        const steps = duration / intervalTime;
-        const decrementPerStep = 100 / steps;
-
-        const progressTimer = setInterval(() => {
-          setProgress((prevProgress) => {
-            const newProgress = prevProgress - decrementPerStep;
-            return newProgress > 0 ? newProgress : 0;
-          });
-        }, intervalTime);
-
-        return () => {
-          clearTimeout(timer);
-          clearInterval(progressTimer);
-        };
-      }
-
-      return () => clearTimeout(timer);
+    if (showProgress && duration && duration > 0) {
+      const intervalTime = 50;
+      const steps = duration / intervalTime;
+      const incrementPerStep = 100 / steps;
+      let finished = false;
+      const progressTimer = setInterval(() => {
+        setProgress((prevProgress) => {
+          const newProgress = prevProgress + incrementPerStep;
+          if (newProgress >= 100 && !finished) {
+            finished = true;
+            clearInterval(progressTimer);
+            onClose();
+          }
+          return newProgress < 100 ? newProgress : 100;
+        });
+      }, intervalTime);
+      return () => clearInterval(progressTimer);
     }
   }, [duration, onClose, showProgress]);
 
-  const bgColor = {
-    success: "bg-green-100 border-green-400 text-green-800",
-    error: "bg-red-100 border-red-400 text-red-800",
-    info: "bg-blue-100 border-blue-400 text-blue-800",
-  };
-
-  const progressColor = {
-    success: "bg-green-500",
-    error: "bg-red-500",
-    info: "bg-blue-500",
-  };
-
-  const IconComponent = {
-    success: CheckCircleIcon,
-    error: XCircleIcon,
-    info: InformationCircleIcon,
-  }[type];
-
   return (
     <div
-      className={`rounded-lg border px-4 py-3 shadow-lg animate-fade-in ${bgColor[type]}`}
+      className="flex flex-col gap-1 animate-fade-in"
+      style={{ minWidth: 0, maxWidth: 320 }}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {showSpinner ? (
-            <div
-              className={`w-5 h-5 border-2 ${
-                type === "info" ? "border-blue-600" : "border-current"
-              } border-t-transparent rounded-full animate-spin`}
-            />
-          ) : (
-            <IconComponent className="w-5 h-5" />
-          )}
-          <p className="text-sm font-medium">{message}</p>
-        </div>
+      <div className="flex items-center gap-2">
+        {showSpinner ? (
+          <div
+            className={`w-5 h-5 border-2 ${
+              type === "info" ? "border-blue-600" : "border-current"
+            } border-t-transparent rounded-full animate-spin mr-1`}
+          />
+        ) : null}
+        <span className="font-semibold text-green-700 text-sm">{message}</span>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 focus:outline-none ml-3"
+          className="text-green-700 hover:opacity-70 focus:outline-none transition-opacity ml-2"
         >
           <XMarkIcon className="w-4 h-4" />
         </button>
       </div>
 
       {showProgress && (
-        <div className="h-1 w-full bg-gray-200 rounded-full mt-2 overflow-hidden">
+        <div className="h-1 w-full bg-green-200 rounded-full mt-1 overflow-hidden">
           <div
-            className={`h-full ${progressColor[type]} transition-all duration-100 ease-linear`}
+            className="h-full bg-green-500 transition-all duration-100 ease-linear"
             style={{ width: `${progress}%` }}
           />
         </div>

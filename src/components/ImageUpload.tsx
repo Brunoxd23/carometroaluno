@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { UserCircleIcon } from "@heroicons/react/24/outline";
+import { useToast } from "./ui/ToastContext";
 
 interface ImageUploadProps {
   currentImage?: string;
@@ -17,6 +18,7 @@ export default function ImageUpload({
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(currentImage);
+  const { toast } = useToast();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,12 +43,21 @@ export default function ImageUpload({
       const data = await response.json();
       if (data.url) {
         onImageUpload(data.url);
+        toast({
+          message: "Foto enviada e salva com sucesso.",
+          type: "success",
+          onClose: () => {},
+        });
       } else {
         throw new Error("No URL in response");
       }
     } catch (error) {
-      console.error("Erro no upload:", error);
-      alert("Erro ao fazer upload da imagem. Tente novamente.");
+      console.error("Erro ao fazer upload:", error);
+      toast({
+        message: "Falha ao enviar a foto.",
+        type: "error",
+        onClose: () => {},
+      });
     } finally {
       setIsUploading(false);
     }
