@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
+import logo from "../assets/logo.png";
 
 import {
   HomeIcon,
@@ -59,16 +60,17 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <Image
-              src="/logo.png"
+              src={logo}
               alt="Logo"
-              fill
+              width={100}
+              height={100}
               className="object-contain"
               priority
             />
           </Link>
 
-          {/* Título Centralizado com Gradiente */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          {/* Título centralizado com gradiente */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-fit">
             <h1 className="text-xl sm:text-2xl font-bold relative">
               <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent">
                 Alunos
