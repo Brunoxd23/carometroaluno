@@ -49,6 +49,39 @@ const courseConfig = {
   },
 };
 
+function PhotoModal({
+  src,
+  alt,
+  onClose,
+}: {
+  src: string;
+  alt: string;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      onClick={onClose}
+    >
+      <div className="relative">
+        <Image
+          src={src}
+          alt={alt}
+          width={480}
+          height={480}
+          className="rounded-xl shadow-2xl object-contain max-w-[90vw] max-h-[90vh]"
+        />
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-2 hover:bg-black/80"
+        >
+          &times;
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function CarometroPage() {
   const params = useParams();
   const router = useRouter();
@@ -56,6 +89,10 @@ export default function CarometroPage() {
     course: Course;
     period: string;
     groups: Group[];
+  } | null>(null);
+  const [zoomPhoto, setZoomPhoto] = useState<{
+    src: string;
+    alt: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -284,7 +321,7 @@ export default function CarometroPage() {
                           key={student.id}
                           className="flex flex-col items-center group hover:bg-gray-50 p-2 rounded-lg transition-colors"
                         >
-                          <div className="relative w-24 h-24 rounded-lg overflow-hidden mb-2 bg-gray-100">
+                          <div className="relative w-24 h-24 rounded-lg overflow-hidden mb-2 bg-gray-100 cursor-zoom-in">
                             {student.photoUrl ? (
                               <Image
                                 src={student.photoUrl}
@@ -292,6 +329,13 @@ export default function CarometroPage() {
                                 fill
                                 sizes="96px"
                                 className="object-cover"
+                                onClick={() =>
+                                  student.photoUrl &&
+                                  setZoomPhoto({
+                                    src: student.photoUrl,
+                                    alt: student.name,
+                                  })
+                                }
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -334,6 +378,13 @@ export default function CarometroPage() {
             </div>
           )}
         </div>
+        {zoomPhoto && (
+          <PhotoModal
+            src={zoomPhoto.src}
+            alt={zoomPhoto.alt}
+            onClose={() => setZoomPhoto(null)}
+          />
+        )}
       </div>
     </div>
   );
