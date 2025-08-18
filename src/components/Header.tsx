@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
+
 import {
   HomeIcon,
   UserGroupIcon,
@@ -54,19 +55,16 @@ export default function Header() {
   return (
     <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20 relative">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <div className="w-20 h-20 sm:w-28 sm:h-28 relative -my-4">
-              <Image
-                src="/BASE-CAROMETRO.webp"
-                alt="Logo"
-                fill
-                sizes="(max-width: 640px) 5rem, 7rem"
-                className="object-contain"
-                priority
-              />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </Link>
 
           {/* Título Centralizado com Gradiente */}
@@ -98,42 +96,77 @@ export default function Header() {
             </nav>
 
             {/* Perfil do usuário */}
-            <div className="relative">
+            <div className="relative flex items-center gap-4">
               {session?.user ? (
-                <div>
+                <div className="flex items-center gap-2 relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center gap-2 text-gray-600 hover:text-blue-600"
+                    className="flex items-center gap-2 text-gray-600 hover:text-blue-600 px-2 py-1 rounded-lg transition-colors focus:outline-none"
+                    style={{ minWidth: 0 }}
                   >
                     <UserCircleIcon className="w-6 h-6" />
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium truncate max-w-[120px] flex items-center">
                       {session.user.name}
                     </span>
                   </button>
-
-                  {/* Menu de perfil */}
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="flex items-center gap-1 text-red-600 hover:text-red-800 px-2 py-1 rounded-lg transition-colors focus:outline-none"
+                    title="Sair"
+                  >
+                    <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                  </button>
                   {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 ring-1 ring-black ring-opacity-5">
-                      <Link
-                        href="/dashboard"
+                    <>
+                      {/* Overlay para fechar ao clicar fora no desktop */}
+                      <div
+                        className="hidden md:block fixed inset-0 z-40"
                         onClick={() => setIsProfileOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      />
+                      <div
+                        className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 ring-1 ring-black ring-opacity-5 animate-fade-in"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        Dashboard
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setIsProfileOpen(false);
-                          signOut({ callbackUrl: "/" });
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <div className="flex items-center gap-2">
-                          <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                          <span>Sair</span>
-                        </div>
-                      </button>
-                    </div>
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <UserCircleIcon className="w-5 h-5" />
+                          <span className="text-sm font-medium">Dashboard</span>
+                        </Link>
+                        <Link
+                          href="/secretaria"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <ClipboardIcon className="w-5 h-5" />
+                          <span className="text-sm font-medium">
+                            Secretaria
+                          </span>
+                        </Link>
+                        <Link
+                          href="/carometros"
+                          onClick={() => setIsProfileOpen(false)}
+                          className="flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <UserGroupIcon className="w-5 h-5" />
+                          <span className="text-sm font-medium">
+                            Carometros
+                          </span>
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            signOut({ callbackUrl: "/" });
+                          }}
+                          className="flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg w-full transition-colors"
+                        >
+                          <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                          <span className="text-sm font-medium">Sair</span>
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               ) : (
@@ -146,53 +179,89 @@ export default function Header() {
               )}
             </div>
           </div>
+        </div>
 
-          {/* Menu Mobile mais clean */}
-          {mounted && (
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 hover:bg-gray-50 rounded-lg"
-              aria-label="Menu"
-            >
-              {isMenuOpen ? (
-                <XMarkIcon className="w-6 h-6 text-gray-600" />
-              ) : (
-                <Bars3Icon className="w-6 h-6 text-gray-600" />
-              )}
-            </button>
-          )}
-          {/* Menu Mobile Overlay com efeito de barrinha */}
-          {mounted && isMenuOpen && (
+        {/* Menu Mobile mais clean */}
+        {mounted && (
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden p-2 hover:bg-gray-50 rounded-lg absolute right-0 top-1/2 -translate-y-1/2"
+            aria-label="Menu"
+          >
+            {isMenuOpen ? (
+              <XMarkIcon className="w-6 h-6 text-gray-600" />
+            ) : (
+              <Bars3Icon className="w-6 h-6 text-gray-600" />
+            )}
+          </button>
+        )}
+        {/* Menu Mobile Overlay com efeito de barrinha */}
+        {mounted && isMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setIsMenuOpen(false)}
+          >
             <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-              onClick={() => setIsMenuOpen(false)}
+              className="absolute right-0 top-0 bottom-0 w-64 bg-white shadow-xl flex flex-col"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div
-                className="absolute right-0 top-0 bottom-0 w-64 bg-white shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="pt-20 px-4">
-                  <nav className="space-y-1">
-                    {navItems.map(({ href, icon: Icon, label }) => (
-                      <Link
-                        key={href}
-                        href={href}
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center gap-3 p-3 text-gray-600 hover:text-blue-600 rounded-lg group relative"
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span className="text-sm font-medium relative">
-                          {label}
-                          <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full" />
-                        </span>
-                      </Link>
-                    ))}
-                  </nav>
-                </div>
+              <div className="pt-20 px-4 flex-1">
+                <nav className="space-y-1">
+                  {navItems.map(({ href, icon: Icon, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 p-3 text-gray-600 hover:text-blue-600 rounded-lg group relative"
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm font-medium relative">
+                        {label}
+                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full" />
+                      </span>
+                    </Link>
+                  ))}
+                  {/* Adiciona Dashboard no mobile */}
+                  {session?.user && (
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 p-3 text-gray-600 hover:text-blue-600 rounded-lg group relative"
+                    >
+                      <UserCircleIcon className="w-5 h-5" />
+                      <span className="text-sm font-medium relative">
+                        Dashboard
+                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full" />
+                      </span>
+                    </Link>
+                  )}
+                </nav>
+                {/* Perfil do usuário no menu mobile - apenas ícone e nome, sem dropdown */}
+                {session?.user && (
+                  <div className="flex items-center gap-3 p-3 text-gray-600">
+                    <UserCircleIcon className="w-5 h-5" />
+                    <span className="text-sm font-medium truncate max-w-[120px]">
+                      {session.user.name}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {/* Botão Sair no menu mobile */}
+              <div className="px-4 pb-6">
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    signOut({ callbackUrl: "/" });
+                  }}
+                  className="w-full flex items-center gap-2 justify-center py-2 px-3 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition-colors"
+                >
+                  <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                  Sair
+                </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );
