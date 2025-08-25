@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 export interface ToastProps {
   message: string;
@@ -44,30 +44,73 @@ export default function Toast({
 
   return (
     <div
-      className="flex flex-col gap-1 animate-fade-in"
-      style={{ minWidth: 0, maxWidth: 320 }}
+      className={`flex flex-row items-center animate-fade-in rounded-lg shadow-md border px-3 py-2 max-w-sm min-w-0 ${
+        type === "error"
+          ? "bg-red-50 border-red-200"
+          : type === "success"
+          ? "bg-green-50 border-green-200"
+          : "bg-blue-50 border-blue-200"
+      }`}
+      style={{ fontSize: "0.95rem" }}
     >
-      <div className="flex items-center gap-2">
-        {showSpinner ? (
-          <div
-            className={`w-5 h-5 border-2 ${
-              type === "info" ? "border-blue-600" : "border-current"
-            } border-t-transparent rounded-full animate-spin mr-1`}
-          />
-        ) : null}
-        <span className="font-semibold text-green-700 text-sm">{message}</span>
-        <button
-          onClick={onClose}
-          className="text-green-700 hover:opacity-70 focus:outline-none transition-opacity ml-2"
-        >
-          <XMarkIcon className="w-4 h-4" />
-        </button>
-      </div>
-
+      {type === "error" && (
+        <ExclamationCircleIcon className="w-4 h-4 text-red-500 flex-shrink-0 mr-2" />
+      )}
+      {showSpinner && (
+        <div
+          className={`w-4 h-4 border-2 ${
+            type === "info"
+              ? "border-blue-600"
+              : type === "error"
+              ? "border-red-600"
+              : "border-green-600"
+          } border-t-transparent rounded-full animate-spin mr-1`}
+        />
+      )}
+      <span
+        className={`font-medium ${
+          type === "error"
+            ? "text-red-700"
+            : type === "success"
+            ? "text-green-700"
+            : "text-blue-700"
+        }`}
+        style={{ flex: 1 }}
+      >
+        {message}
+      </span>
+      <button
+        onClick={onClose}
+        className={`hover:opacity-70 focus:outline-none transition-opacity ml-2 ${
+          type === "error"
+            ? "text-red-700"
+            : type === "success"
+            ? "text-green-700"
+            : "text-blue-700"
+        }`}
+        style={{ padding: 0 }}
+      >
+        <XMarkIcon className="w-4 h-4" />
+      </button>
+      {/* Barra de progresso compacta */}
       {showProgress && (
-        <div className="h-1 w-full bg-green-200 rounded-full mt-1 overflow-hidden">
+        <div
+          className={`h-1 w-full rounded-full mt-1 overflow-hidden absolute left-0 bottom-0 ${
+            type === "error"
+              ? "bg-red-200"
+              : type === "success"
+              ? "bg-green-200"
+              : "bg-blue-200"
+          }`}
+        >
           <div
-            className="h-full bg-green-500 transition-all duration-100 ease-linear"
+            className={`h-full transition-all duration-100 ease-linear ${
+              type === "error"
+                ? "bg-red-500"
+                : type === "success"
+                ? "bg-green-500"
+                : "bg-blue-500"
+            }`}
             style={{ width: `${progress}%` }}
           />
         </div>

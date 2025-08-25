@@ -83,6 +83,12 @@ export default function Login() {
         return;
       }
 
+      // Toast de sucesso
+      toast({
+        message: "Login realizado com sucesso!",
+        type: "success",
+        onClose: () => {},
+      });
       // Marcar login como bem-sucedido para ativar o efeito de recarregamento
       setLoginSuccess(true);
     } catch (err) {
