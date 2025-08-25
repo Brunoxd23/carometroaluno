@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/ToastContext";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -16,6 +17,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
@@ -72,7 +74,11 @@ export default function Login() {
       });
 
       if (result?.error) {
-        setError("Email ou senha incorretos");
+        toast({
+          message: "Credenciais inválidas",
+          type: "error",
+          onClose: () => {},
+        });
         setIsLoading(false);
         return;
       }
@@ -80,7 +86,11 @@ export default function Login() {
       // Marcar login como bem-sucedido para ativar o efeito de recarregamento
       setLoginSuccess(true);
     } catch (err) {
-      setError("Ocorreu um erro ao fazer login. Tente novamente.");
+      toast({
+        message: "Credenciais inválidas",
+        type: "error",
+        onClose: () => {},
+      });
       console.error("Erro de login:", err);
       setIsLoading(false);
     }
