@@ -1,3 +1,18 @@
+### Diagrama de Arquitetura
+
+```mermaid
+graph TD
+  Usuário -->|Acessa| Frontend[Next.js + Tailwind + TypeScript]
+  Frontend -->|Chama| API[API Routes (Next.js)]
+  API -->|Consulta| MongoDB[MongoDB Atlas]
+  API -->|Autentica| NextAuth[NextAuth.js]
+  API -->|Upload/Busca| Cloudinary[Cloudinary]
+  Frontend -->|Renderiza| Componentes[Componentes UI]
+  Frontend -->|Notifica| Toast[Toast Notificações]
+  API -->|Valida| Permissões[Controle de Acesso]
+  Permissões -->|Define| Papéis[Admin, Secretaria, Coordenador, Docente, Funcionário]
+```
+
 # Carometro Alunos
 
 Sistema de gerenciamento de fotos e informações de alunos por curso e período, desenvolvido para facilitar o trabalho de coordenadores, docentes e secretarias acadêmicas.
@@ -85,6 +100,16 @@ carometro-alunos/
 │   └── background.svg
 └── package.json
 ```
+
+## 🏗️ Arquitetura do Sistema
+
+- **Frontend:** Next.js (App Router) + TailwindCSS + TypeScript
+- **Backend:** API Routes do Next.js para lógica de negócio e integração com banco
+- **Autenticação:** NextAuth.js, com controle de acesso por função (admin, secretaria, coordenador, docente, funcionário)
+- **Banco de Dados:** MongoDB Atlas, collections para usuários, grupos, alunos, cursos
+- **Armazenamento de Imagens:** Cloudinary, integrado via API
+- **Notificações:** Toast customizado para feedback de ações
+- **Organização:** Estrutura modular em `src/app`, `src/components`, `src/lib`, `src/types`
 
 ## 🤝 Como Contribuir
 
