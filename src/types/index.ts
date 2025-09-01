@@ -22,6 +22,7 @@ export interface Student {
   name: string;
   ra: string;
   photoUrl?: string;
+  course?: Course;
 }
 
 export interface Group {

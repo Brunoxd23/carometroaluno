@@ -93,19 +93,25 @@ export default function GroupManager({
 
   const searchStudent = async (ra: string) => {
     setIsSearching(true);
-    // setError(null); // removido
-
     try {
       const response = await fetch(`/api/students?ra=${ra}&curso=${course}`);
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao buscar aluno");
+        toast({
+          message: data.error || "Erro ao buscar aluno.",
+          type: "error",
+          onClose: () => {},
+        });
+        return null;
       }
-
       return data;
     } catch {
-      // setError(error instanceof Error ? error.message : "Erro ao buscar aluno"); // removido
+      toast({
+        message: "Erro ao buscar aluno.",
+        type: "error",
+        onClose: () => {},
+      });
       return null;
     } finally {
       setIsSearching(false);
@@ -141,6 +147,16 @@ export default function GroupManager({
     const student = await searchStudent(ra);
     if (!student) return;
 
+    // Validação: impedir adicionar aluno de outro curso
+    if (student.curso && student.curso !== course) {
+      toast({
+        message: `Não é permitido adicionar aluno de ${student.curso} em grupo de ${course}.`,
+        type: "error",
+        onClose: () => {},
+      });
+      return;
+    }
+
     const updatedGroups = groups.map((group) => {
       if (group.id === groupId) {
         return {
@@ -152,6 +168,7 @@ export default function GroupManager({
               name: student.name,
               ra: student.ra,
               photoUrl: student.photoUrl || "",
+              curso: student.curso,
             },
           ],
         };
@@ -159,7 +176,7 @@ export default function GroupManager({
       return group;
     });
 
-    handleUpdateGroups(updatedGroups); // Remover o segundo argumento
+    handleUpdateGroups(updatedGroups);
     setGroupInputs((prev) => ({ ...prev, [groupId]: "" }));
     toast({
       message: `${student.name} adicionado(a) com sucesso!`,

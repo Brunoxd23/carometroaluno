@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     }
 
     // Alterar verificação de curso
-    if (course && student.course !== course) {
+    if (course && student.curso !== course) {
       return NextResponse.json(
         { error: `Aluno não pertence ao curso de ${course}` },
         { status: 400 }
