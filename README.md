@@ -2,15 +2,20 @@
 
 ```mermaid
 graph TD
-  Usuário -->|Acessa| Frontend[Next.js + Tailwind + TypeScript]
-  Frontend -->|Chama| API[API Routes (Next.js)]
-  API -->|Consulta| MongoDB[MongoDB Atlas]
-  API -->|Autentica| NextAuth[NextAuth.js]
-  API -->|Upload/Busca| Cloudinary[Cloudinary]
-  Frontend -->|Renderiza| Componentes[Componentes UI]
-  Frontend -->|Notifica| Toast[Toast Notificações]
-  API -->|Valida| Permissões[Controle de Acesso]
-  Permissões -->|Define| Papéis[Admin, Secretaria, Coordenador, Docente, Funcionário]
+  Usuario -->|Acessa| Frontend
+  Frontend -->|Chama| API
+  API -->|Consulta| MongoDB
+  API -->|Autentica| NextAuth
+  API -->|Upload/Busca| Cloudinary
+  Frontend -->|Renderiza| ComponentesUI
+  Frontend -->|Notifica| Toast
+  API -->|Valida| Permissoes
+  Permissoes -->|Define| Papeis
+  Papeis --> Admin
+  Papeis --> Secretaria
+  Papeis --> Coordenador
+  Papeis --> Docente
+  Papeis --> Funcionario
 ```
 
 # Carometro Alunos
