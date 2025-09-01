@@ -15,7 +15,7 @@ export default function Home() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center p-4 pt-20">
-      <div className="mb-8 w-full max-w-2xl mx-auto">
+      <div className="mb-8 w-full max-w-2xl">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">
           Bem-vindo, {user?.name || "usuário"}!
         </h1>
