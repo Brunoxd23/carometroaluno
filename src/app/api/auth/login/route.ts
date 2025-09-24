@@ -5,10 +5,10 @@ import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
-    const { email, passwordHash } = await request.json();
+    const { email, password } = await request.json();
 
     // Validações básicas
-    if (!email || !passwordHash) {
+    if (!email || !password) {
       return NextResponse.json(
         { message: "Email e senha são obrigatórios" },
         { status: 400 }
@@ -33,8 +33,8 @@ export async function POST(request: Request) {
     // Isto é feito de forma segura sem expor a senha original na rede
     // A autenticação final ainda depende do bcrypt
     const passwordMatch = await bcrypt.compare(
-      passwordHash, // Aqui recebemos apenas o hash da senha
-      user.password // Comparamos com a senha armazenada no banco
+      password, // Senha fornecida pelo usuário
+      user.password // Senha hash armazenada no banco
     );
 
     if (!passwordMatch) {
