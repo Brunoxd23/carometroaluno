@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export async function POST(request: Request) {
   try {
@@ -29,9 +32,6 @@ export async function POST(request: Request) {
     }
 
     // Verificar a senha com bcrypt
-    // Observe que estamos comparando a senha do banco com a senha original
-    // Isto é feito de forma segura sem expor a senha original na rede
-    // A autenticação final ainda depende do bcrypt
     const passwordMatch = await bcrypt.compare(
       password, // Senha fornecida pelo usuário
       user.password // Senha hash armazenada no banco
@@ -44,19 +44,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Gerar um token temporário para autenticação que será usado com NextAuth
-    // Não incluir dados sensíveis neste token
-    const sessionToken = crypto.randomUUID();
+    // Gerar um token JWT com expiração de 1 hora
+    const secret = process.env.JWT_SECRET || "fallback-segredo";
 
-    // Armazenar temporariamente o token para validação posterior (opcional)
-    // Isto poderia ser feito em uma tabela no banco de dados com prazo de expiração
+    const token = jwt.sign(
+      { userId: user._id.toString(), role: user.role },
+      secret,
+      { expiresIn: "1h" }
+    );
 
-    // Evitar enviar dados sensíveis na resposta
     return NextResponse.json({
       success: true,
-      token: sessionToken,
+      token,
       userId: user._id.toString(),
-      // Não inclua a senha nem mesmo em hash!
     });
   } catch (error) {
     console.error("Erro na autenticação:", error);
