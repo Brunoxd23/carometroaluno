@@ -9,39 +9,23 @@ export default withAuth(
     const token = request.nextauth?.token;
     const path = request.nextUrl.pathname;
 
-    // Verifica token personalizado no header
-    const authHeader = request.headers.get("authorization");
-    const customToken = authHeader?.startsWith("Bearer ")
-      ? authHeader.substring(7)
-      : null;
-
     // Permite acesso à página de login sem autenticação
     if (path === "/login") {
       return NextResponse.next();
     }
 
-    // Se a rota começa com /api/, permite acesso com token personalizado
-    if (path.startsWith("/api/") && customToken) {
-      return NextResponse.next();
-    }
-
-    // Para outras rotas, exige autenticação NextAuth
+    // Redireciona se não estiver autenticado
     if (!token) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
     // Protege rota de admin
-    if (
-      token &&
-      path.startsWith("/dashboard/admin") &&
-      token.role !== "admin"
-    ) {
+    if (path.startsWith("/dashboard/admin") && token.role !== "admin") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     // Protege rota da secretaria
     if (
-      token &&
       path.startsWith("/secretaria") &&
       !["admin", "secretaria"].includes(token.role as string)
     ) {
@@ -49,9 +33,11 @@ export default withAuth(
     }
 
     // Filtra acesso aos carometros para coordenadores e docentes
-    if (token && path.startsWith("/carometros")) {
+    if (path.startsWith("/carometros")) {
+      // Verificação específica para visualização de um curso
       const courseMatch = path.match(/\/carometros\/([^\/]+)/);
 
+      // Se for um path específico de um curso (não a página geral de carometros)
       if (
         courseMatch &&
         courseMatch[1] &&
@@ -59,7 +45,10 @@ export default withAuth(
         Array.isArray(token.courses) &&
         token.courses.length > 0
       ) {
+        // Decodifica o curso da URL - usar apenas course
         const requestedCourse = decodeURIComponent(courseMatch[1]) as Course;
+
+        // Lista de todos os cursos disponíveis
         const allCourses: Course[] = [
           "Engenharia",
           "Fisioterapia",
@@ -67,7 +56,9 @@ export default withAuth(
           "Odontologia",
         ];
 
+        // Verifica se o curso existe
         if (allCourses.includes(requestedCourse)) {
+          // Se o usuário não tem acesso ao curso solicitado, redireciona para o dashboard
           if (!token.courses.includes(requestedCourse)) {
             return NextResponse.redirect(new URL("/dashboard", request.url));
           }
@@ -80,9 +71,8 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        const path = req.nextUrl.pathname;
-
         // Permitir acesso a rotas públicas sem autenticação
+        const path = req.nextUrl.pathname;
         if (
           path === "/login" ||
           path === "/api/auth/signin" ||
@@ -91,15 +81,6 @@ export default withAuth(
         ) {
           return true;
         }
-
-        // Permitir acesso a rotas da API se tiver token no header
-        if (path.startsWith("/api/")) {
-          const authHeader = req.headers.get("authorization");
-          if (authHeader?.startsWith("Bearer ")) {
-            return true;
-          }
-        }
-
         return !!token;
       },
     },
@@ -108,5 +89,14 @@ export default withAuth(
 
 // Define os caminhos protegidos (todos exceto login e autenticação)
 export const config = {
-  matcher: ["/((?!api/auth|login|_next|favicon.ico|manifest.json).*)"],
+  matcher: [
+    /*
+     * Corresponde a todos os caminhos exceto:
+     * 1. /api/auth (rotas de autenticação do NextAuth.js)
+     * 2. /login (página de login)
+     * 3. /_next (arquivos estáticos do Next.js)
+     * 4. /favicon.ico, /manifest.json (arquivos de metadados do navegador)
+     */
+    "/((?!api/auth|login|_next|favicon.ico|manifest.json).*)",
+  ],
 };

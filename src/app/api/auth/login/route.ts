@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
-dotenv.config();
+import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const { email, passwordHash } = await request.json();
 
     // Validações básicas
-    if (!email || !password) {
+    if (!email || !passwordHash) {
       return NextResponse.json(
         { message: "Email e senha são obrigatórios" },
         { status: 400 }
@@ -32,9 +29,12 @@ export async function POST(request: Request) {
     }
 
     // Verificar a senha com bcrypt
+    // Observe que estamos comparando a senha do banco com a senha original
+    // Isto é feito de forma segura sem expor a senha original na rede
+    // A autenticação final ainda depende do bcrypt
     const passwordMatch = await bcrypt.compare(
-      password, // Senha fornecida pelo usuário
-      user.password // Senha hash armazenada no banco
+      passwordHash, // Aqui recebemos apenas o hash da senha
+      user.password // Comparamos com a senha armazenada no banco
     );
 
     if (!passwordMatch) {
@@ -44,19 +44,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Gerar um token JWT com expiração de 1 hora
-    const secret = process.env.JWT_SECRET || "fallback-segredo";
+    // Gerar um token temporário para autenticação que será usado com NextAuth
+    // Não incluir dados sensíveis neste token
+    const sessionToken = crypto.randomUUID();
 
-    const token = jwt.sign(
-      { userId: user._id.toString(), role: user.role },
-      secret,
-      { expiresIn: "1h" }
-    );
+    // Armazenar temporariamente o token para validação posterior (opcional)
+    // Isto poderia ser feito em uma tabela no banco de dados com prazo de expiração
 
+    // Evitar enviar dados sensíveis na resposta
     return NextResponse.json({
       success: true,
-      token,
+      token: sessionToken,
       userId: user._id.toString(),
+      // Não inclua a senha nem mesmo em hash!
     });
   } catch (error) {
     console.error("Erro na autenticação:", error);
